@@ -9,10 +9,28 @@ export type Point = {
   col: number;
 };
 
-export type Move = {
+export type StoneMove = {
+  type: "stone";
   row: number;
   col: number;
   player: Player;
   captured: Point[];
   moveNumber: number;
 };
+
+export type PassMove = {
+  type: "pass";
+  player: Player;
+  moveNumber: number;
+};
+
+export type ResignMove = {
+  type: "resign";
+  player: Player;
+  winner: Player;
+  moveNumber: number;
+};
+
+export type Move = StoneMove | PassMove | ResignMove;
+
+export type GameStatus = "playing" | "finished";
