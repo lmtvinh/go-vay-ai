@@ -34,3 +34,17 @@ export type ResignMove = {
 export type Move = StoneMove | PassMove | ResignMove;
 
 export type GameStatus = "playing" | "finished";
+
+export type GameMode =
+  | "pvp-local"
+  | "pvp-online"
+  | "human-bot"
+  | "human-ai-coach"
+  | "tutorial"
+  | "lesson";
+
+export type GameEndReason =
+  | "resign"
+  | "double-pass"
+  | "score"
+  | "lesson-complete";
