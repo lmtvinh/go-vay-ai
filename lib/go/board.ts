@@ -159,19 +159,3 @@ export function placeStone(
     captured,
   };
 }
-
-export function areBoardsEqual(boardA: Board, boardB: Board): boolean {
-    if (boardA.length !== boardB.length) return false;
-
-    for (let row = 0; row < boardA.length; row++) {
-        if (boardA[row].length !== boardB[row].length) return false;
-
-        for (let col = 0; col < boardA[row].length; col++) {
-            if (boardA[row][col] !== boardB[row][col]) {
-                return false;
-            }
-        }
-    }
-
-    return true;
-}
