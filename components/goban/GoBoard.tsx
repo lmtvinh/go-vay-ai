@@ -3,7 +3,6 @@
 import { useState } from "react";
 import {
     BOARD_SIZE,
-    areBoardsEqual,
     createEmptyBoard,
     getOpponent,
     placeStone,
@@ -41,7 +40,7 @@ export default function GoBoard() {
     const [endReason, setEndReason] = useState<GameEndReason | null>(null);
     const [showGameEndPopup, setShowGameEndPopup] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const [koPreviousBoard, setKoPreviousBoard] = useState<Board | null>(null);
+
 
     function handlePlaceStone(row: number, col: number) {
         if (gameStatus === "finished") {
@@ -56,16 +55,10 @@ export default function GoBoard() {
             return;
         }
 
-        if (koPreviousBoard && areBoardsEqual(result.board, koPreviousBoard)) {
-            showError("Không thể đi nước này vì vi phạm luật Ko.");
-            return;
-        }
-
         setErrorMessage(null);
 
         const capturedCount = result.captured.length;
 
-        setKoPreviousBoard(board);
         setBoard(result.board);
 
         setMoveHistory((prev) => [
@@ -107,7 +100,6 @@ export default function GoBoard() {
         }
 
         const nextConsecutivePasses = consecutivePasses + 1;
-        setKoPreviousBoard(null);
 
         setMoveHistory((prev) => [
             ...prev,
@@ -179,7 +171,6 @@ export default function GoBoard() {
         setConsecutivePasses(0);
         setEndReason(null);
         setShowGameEndPopup(false);
-        setKoPreviousBoard(null);
     }
 
     function handleExitGameMode() {
