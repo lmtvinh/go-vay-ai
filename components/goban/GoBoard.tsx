@@ -8,7 +8,6 @@ import {
     placeStone,
 } from "@/lib/go/board";
 import { useRouter } from "next/navigation";
-import GameEndPopup from "@/components/ui/GameEndPopup";
 import type {
     Board,
     GameEndReason,
@@ -17,6 +16,8 @@ import type {
     Move,
     Player,
 } from "@/lib/go/types";
+import ErrorPopup from "@/components/ui/ErrorPopup";
+import GameEndPopup from "@/components/ui/GameEndPopup";
 
 function getPlayerLabel(player: Player) {
     return player === "black" ? "Đen" : "Trắng";
@@ -38,20 +39,23 @@ export default function GoBoard() {
     const [viewerPlayer] = useState<Player>("black");
     const [endReason, setEndReason] = useState<GameEndReason | null>(null);
     const [showGameEndPopup, setShowGameEndPopup] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
 
     function handlePlaceStone(row: number, col: number) {
         if (gameStatus === "finished") {
-            setMessage("Ván cờ đã kết thúc. Hãy bấm Reset để chơi ván mới.");
+            showError("Ván cờ đã kết thúc. Hãy bấm Reset để chơi ván mới.");
             return;
         }
 
         const result = placeStone(board, row, col, currentPlayer);
 
         if (!result.ok) {
-            setMessage(result.error);
+            showError(result.error);
             return;
         }
+
+        setErrorMessage(null);
 
         const capturedCount = result.captured.length;
 
@@ -90,7 +94,10 @@ export default function GoBoard() {
     }
 
     function handlePass() {
-        if (gameStatus === "finished") return;
+        if (gameStatus === "finished") {
+            showError("Ván cờ đã kết thúc. Hãy bấm Reset để chơi ván mới.");
+            return;
+        }
 
         const nextConsecutivePasses = consecutivePasses + 1;
 
@@ -123,7 +130,10 @@ export default function GoBoard() {
     }
 
     function handleResign() {
-        if (gameStatus === "finished") return;
+        if (gameStatus === "finished") {
+            showError("Ván cờ đã kết thúc. Không thể đầu hàng sau khi ván đã kết thúc.");
+            return;
+        }
 
         const gameWinner = getOpponent(currentPlayer);
 
@@ -167,8 +177,18 @@ export default function GoBoard() {
         router.push("/");
     }
 
+    function showError(message: string) {
+        setErrorMessage(message);
+        setMessage(message);
+    }
+
     return (
         <>
+            <ErrorPopup
+                message={errorMessage}
+                onClose={() => setErrorMessage(null)}
+            />
+
             {endReason && (
                 <GameEndPopup
                     isOpen={showGameEndPopup}
@@ -287,16 +307,15 @@ export default function GoBoard() {
                                     <button
                                         key={`${rowIndex}-${colIndex}`}
                                         onClick={() => handlePlaceStone(rowIndex, colIndex)}
-                                        disabled={gameStatus === "finished"}
-                                        className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full disabled:cursor-not-allowed"
+                                        className={`absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full ${gameStatus === "finished" ? "cursor-not-allowed" : ""
+                                            }`}
                                         style={{
                                             left: `${(colIndex / (BOARD_SIZE - 1)) * 100}%`,
                                             top: `${(rowIndex / (BOARD_SIZE - 1)) * 100}%`,
                                             width: "9%",
                                             height: "9%",
                                         }}
-                                        aria-label={`Place stone at ${rowIndex + 1}, ${colIndex + 1
-                                            }`}
+                                        aria-label={`Place stone at ${rowIndex + 1}, ${colIndex + 1}`}
                                     >
                                         {stone && (
                                             <span

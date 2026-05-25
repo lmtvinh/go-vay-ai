@@ -33,7 +33,7 @@ function getGameEndContent({
             title: "Hai người chơi đã Pass liên tiếp",
             description:
                 "Ván cờ đã kết thúc. Phiên bản hiện tại chưa có tính điểm tự động, nên chưa xác định người thắng.",
-            tone: "neutral",
+            tone: "neutral" as const,
         };
     }
 
@@ -42,7 +42,7 @@ function getGameEndContent({
             badge: "Ván cờ kết thúc",
             title: "Game Over",
             description: "Ván cờ đã kết thúc.",
-            tone: "neutral",
+            tone: "neutral" as const,
         };
     }
 
@@ -55,7 +55,7 @@ function getGameEndContent({
             description: `${getPlayerLabel(winner)} đã thắng. ${getPlayerLabel(
                 loser
             )} thua ván này.`,
-            tone: "win",
+            tone: "win" as const,
         };
     }
 
@@ -68,7 +68,7 @@ function getGameEndContent({
             description: isViewerWinner
                 ? "Bạn đã thắng người chơi đối thủ. Có thể chơi lại hoặc rời khỏi phòng."
                 : "Bạn đã thua ván này. Bạn có thể chơi lại để phục thù hoặc rời khỏi phòng.",
-            tone: isViewerWinner ? "win" : "lose",
+            tone: isViewerWinner ? ("win" as const) : ("lose" as const),
         };
     }
 
@@ -81,7 +81,7 @@ function getGameEndContent({
             description: isViewerWinner
                 ? "Bạn đã đánh bại Bot. Hãy thử nâng cấp độ khó ở ván tiếp theo."
                 : "Bot đã thắng ván này. Hãy chơi lại để luyện thêm kỹ năng đọc khí và bắt quân.",
-            tone: isViewerWinner ? "win" : "lose",
+            tone: isViewerWinner ? ("win" as const) : ("lose" as const),
         };
     }
 
@@ -94,7 +94,7 @@ function getGameEndContent({
             description: isViewerWinner
                 ? "Bạn chơi tốt ván này. Sau này AI Coach có thể phân tích lại các nước đi quan trọng."
                 : "Đây là cơ hội tốt để học. Sau này AI Coach sẽ giải thích vì sao bạn mất lợi thế.",
-            tone: isViewerWinner ? "win" : "lose",
+            tone: isViewerWinner ? ("win" as const) : ("lose" as const),
         };
     }
 
@@ -104,7 +104,7 @@ function getGameEndContent({
             title: "Hoàn thành bài học",
             description:
                 "Bạn đã hoàn thành bài học hiện tại. Có thể luyện lại hoặc thoát về lộ trình học.",
-            tone: "win",
+            tone: "win" as const,
         };
     }
 
@@ -113,7 +113,7 @@ function getGameEndContent({
         title: "Hoàn thành hướng dẫn",
         description:
             "Bạn đã hoàn thành phần hướng dẫn. Có thể chơi lại để luyện tập hoặc quay về trang học.",
-        tone: "win",
+        tone: "win" as const,
     };
 }
 
@@ -143,7 +143,7 @@ export default function GameEndPopup({
                 : "text-amber-300";
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
             <div className="w-full max-w-md rounded-3xl border border-white/10 bg-neutral-950 p-6 text-center shadow-2xl">
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-3xl">
                     {content.tone === "lose" ? "💭" : content.tone === "win" ? "🏆" : "⚪"}
