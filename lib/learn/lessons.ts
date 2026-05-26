@@ -1,10 +1,12 @@
+export type LessonStatus = "available" | "coming-soon";
+
 export type Lesson = {
     id: string;
     order: number;
     title: string;
     description: string;
     href: string;
-    status: "available" | "coming-soon";
+    status: LessonStatus;
 };
 
 export const lessons: Lesson[] = [
@@ -40,6 +42,15 @@ export const lessons: Lesson[] = [
         description: "Hiểu luật chống lặp vô hạn trong cờ vây.",
         href: "/learn/ko",
         status: "available",
+    },
+    {
+        id: "scoring",
+        order: 5,
+        title: "Đếm điểm cơ bản",
+        description:
+            "Hiểu cách kết thúc ván cờ và ước lượng ai đang dẫn điểm.",
+        href: "/learn/scoring",
+        status: "coming-soon",
     },
 ];
 
