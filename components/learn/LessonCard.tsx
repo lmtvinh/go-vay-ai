@@ -3,10 +3,26 @@ import type { Lesson } from "@/lib/learn/lessons";
 
 type LessonCardProps = {
     lesson: Lesson;
+    isCompleted?: boolean;
 };
 
-export default function LessonCard({ lesson }: LessonCardProps) {
+export default function LessonCard({
+    lesson,
+    isCompleted = false,
+}: LessonCardProps) {
     const isAvailable = lesson.status === "available";
+
+    const badgeLabel = isCompleted
+        ? "Completed"
+        : isAvailable
+            ? "Available"
+            : "Coming soon";
+
+    const badgeClassName = isCompleted
+        ? "bg-emerald-400/10 text-emerald-300"
+        : isAvailable
+            ? "bg-amber-400/10 text-amber-300"
+            : "bg-neutral-400/10 text-neutral-400";
 
     const content = (
         <div
@@ -27,12 +43,9 @@ export default function LessonCard({ lesson }: LessonCardProps) {
                 </div>
 
                 <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${isAvailable
-                        ? "bg-emerald-400/10 text-emerald-300"
-                        : "bg-neutral-400/10 text-neutral-400"
-                        }`}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClassName}`}
                 >
-                    {isAvailable ? "Available" : "Coming soon"}
+                    {badgeLabel}
                 </span>
             </div>
 
@@ -41,7 +54,9 @@ export default function LessonCard({ lesson }: LessonCardProps) {
             </p>
 
             <div className="mt-5 text-sm font-semibold">
-                {isAvailable ? (
+                {isCompleted ? (
+                    <span className="text-emerald-300">Ôn lại bài học →</span>
+                ) : isAvailable ? (
                     <span className="text-amber-300 group-hover:text-amber-200">
                         Bắt đầu học →
                     </span>

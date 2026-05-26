@@ -14,6 +14,7 @@ import BoardGrid from "@/components/goban/BoardGrid";
 import LessonFeedbackPopup from "@/components/ui/LessonFeedbackPopup";
 import { useRouter } from "next/navigation";
 import { getNextLesson } from "@/lib/learn/lessons";
+import { useLessonProgress } from "@/lib/learn/useLessonProgress";
 
 type Feedback = {
     type: "success" | "error";
@@ -63,6 +64,7 @@ export default function AtariLesson() {
 
     const router = useRouter();
     const nextLesson = getNextLesson("atari");
+    const { markLessonCompleted } = useLessonProgress();
 
     function resetLesson() {
         setBoard(createAtariLessonBoard());
@@ -102,6 +104,7 @@ export default function AtariLesson() {
         setBoard(result.board);
         setSelectedPoint({ row, col });
 
+        markLessonCompleted("atari");
         setFeedback({
             type: "success",
             title: "Đúng rồi, bạn đã thoát Atari",

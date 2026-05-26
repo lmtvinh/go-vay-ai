@@ -15,6 +15,7 @@ import type { Board, Player, Point } from "@/lib/go/types";
 import BoardGrid from "@/components/goban/BoardGrid";
 import LessonFeedbackPopup from "@/components/ui/LessonFeedbackPopup";
 import { getNextLesson } from "@/lib/learn/lessons";
+import { useLessonProgress } from "@/lib/learn/useLessonProgress";
 
 type Feedback = {
     type: "success" | "error";
@@ -88,6 +89,7 @@ export default function KoLesson() {
     const highlightedLibertyKeys = new Set(
         selectedAnalysis?.liberties.map(getPointKey) ?? []
     );
+    const { markLessonCompleted } = useLessonProgress();
 
     function resetLesson() {
         setBoard(createCurrentKoBoard());
@@ -125,6 +127,7 @@ export default function KoLesson() {
         }
 
         if (areBoardsEqual(result.board, previousBoard)) {
+            markLessonCompleted("ko");
             setFeedback({
                 type: "success",
                 title: "Đúng rồi, đây là tình huống Ko",
