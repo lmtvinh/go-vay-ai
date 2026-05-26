@@ -39,7 +39,7 @@ export const lessons: Lesson[] = [
         title: "Luật Ko",
         description: "Hiểu luật chống lặp vô hạn trong cờ vây.",
         href: "/learn/ko",
-        status: "coming-soon",
+        status: "available",
     },
 ];
 
