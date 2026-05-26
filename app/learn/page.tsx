@@ -34,6 +34,23 @@ export default function LearnPage() {
                             Học cách nhìn khí cuối cùng của quân đối thủ và bắt quân.
                         </p>
                     </Link>
+
+                    <Link
+                        href="/learn/atari"
+                        className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 transition hover:bg-white/[0.06]"
+                    >
+                        <p className="text-sm uppercase tracking-[0.2em] text-neutral-500">
+                            Bài học 02
+                        </p>
+
+                        <h2 className="mt-3 text-2xl font-bold">
+                            Atari: nhóm chỉ còn 1 khí
+                        </h2>
+
+                        <p className="mt-3 text-sm leading-6 text-neutral-400">
+                            Học cách nhận ra một nhóm quân đang nguy hiểm và tìm nước thoát Atari.
+                        </p>
+                    </Link>
                 </section>
             </div>
         </main>
