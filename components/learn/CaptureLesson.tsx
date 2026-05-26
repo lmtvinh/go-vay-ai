@@ -14,6 +14,7 @@ import type { Board, Player, Point } from "@/lib/go/types";
 import BoardGrid from "@/components/goban/BoardGrid";
 import LessonFeedbackPopup from "@/components/ui/LessonFeedbackPopup";
 import { getNextLesson } from "@/lib/learn/lessons";
+import { useLessonProgress } from "@/lib/learn/useLessonProgress";
 
 type Feedback = {
     type: "success" | "error";
@@ -43,6 +44,7 @@ export default function CaptureLesson() {
     const [currentPlayer] = useState<Player>("black");
     const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
     const [feedback, setFeedback] = useState<Feedback | null>(null);
+    const { markLessonCompleted } = useLessonProgress();
 
     const nextLesson = getNextLesson("capture");
 
@@ -90,6 +92,7 @@ export default function CaptureLesson() {
         );
 
         if (isCorrectMove && capturedWhiteStone) {
+            markLessonCompleted("capture");
             setFeedback({
                 type: "success",
                 title: "Đúng rồi, bạn đã bắt quân trắng",

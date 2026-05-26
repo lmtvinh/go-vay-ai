@@ -14,6 +14,7 @@ import type { Board, Player, Point } from "@/lib/go/types";
 import BoardGrid from "@/components/goban/BoardGrid";
 import LessonFeedbackPopup from "@/components/ui/LessonFeedbackPopup";
 import { getNextLesson } from "@/lib/learn/lessons";
+import { useLessonProgress } from "@/lib/learn/useLessonProgress";
 
 type Feedback = {
     type: "success" | "error";
@@ -60,6 +61,8 @@ export default function SuicideLesson() {
         selectedAnalysis?.liberties.map(getPointKey) ?? []
     );
 
+    const { markLessonCompleted } = useLessonProgress();
+
     function resetLesson() {
         setBoard(createSuicideLessonBoard());
         setSelectedPoint(null);
@@ -87,6 +90,7 @@ export default function SuicideLesson() {
         const result = placeStone(board, row, col, currentPlayer);
 
         if (!result.ok) {
+            markLessonCompleted("suicide");
             setFeedback({
                 type: "success",
                 title: "Đúng rồi, đây là nước tự sát",
