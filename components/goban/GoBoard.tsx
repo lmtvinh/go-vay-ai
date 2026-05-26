@@ -1,13 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+
 import {
     BOARD_SIZE,
+    areBoardsEqual,
     createEmptyBoard,
     getOpponent,
+    getStoneGroupAnalysis,
     placeStone,
 } from "@/lib/go/board";
-import { useRouter } from "next/navigation";
+
 import type {
     Board,
     GameEndReason,
@@ -15,7 +19,9 @@ import type {
     GameStatus,
     Move,
     Player,
+    Point,
 } from "@/lib/go/types";
+
 import ErrorPopup from "@/components/ui/ErrorPopup";
 import GameEndPopup from "@/components/ui/GameEndPopup";
 
@@ -23,7 +29,13 @@ function getPlayerLabel(player: Player) {
     return player === "black" ? "Đen" : "Trắng";
 }
 
+function getPointKey(point: Point) {
+    return `${point.row},${point.col}`;
+}
+
 export default function GoBoard() {
+    const router = useRouter();
+
     const [board, setBoard] = useState<Board>(() => createEmptyBoard());
     const [currentPlayer, setCurrentPlayer] = useState<Player>("black");
     const [moveHistory, setMoveHistory] = useState<Move[]>([]);
@@ -33,18 +45,63 @@ export default function GoBoard() {
     const [gameStatus, setGameStatus] = useState<GameStatus>("playing");
     const [winner, setWinner] = useState<Player | null>(null);
     const [consecutivePasses, setConsecutivePasses] = useState(0);
-    const router = useRouter();
 
     const [gameMode] = useState<GameMode>("pvp-local");
     const [viewerPlayer] = useState<Player>("black");
     const [endReason, setEndReason] = useState<GameEndReason | null>(null);
     const [showGameEndPopup, setShowGameEndPopup] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [koPreviousBoard, setKoPreviousBoard] = useState<Board | null>(null);
+    const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
 
+    const selectedAnalysis = selectedPoint
+        ? getStoneGroupAnalysis(board, selectedPoint.row, selectedPoint.col)
+        : null;
+
+    const highlightedGroupKeys = new Set(
+        selectedAnalysis?.group.map(getPointKey) ?? []
+    );
+
+    const highlightedLibertyKeys = new Set(
+        selectedAnalysis?.liberties.map(getPointKey) ?? []
+    );
+
+    function showError(error: string) {
+        setErrorMessage(error);
+        setMessage(error);
+    }
 
     function handlePlaceStone(row: number, col: number) {
         if (gameStatus === "finished") {
             showError("Ván cờ đã kết thúc. Hãy bấm Reset để chơi ván mới.");
+            return;
+        }
+
+        if (board[row][col] !== null) {
+            const analysis = getStoneGroupAnalysis(board, row, col);
+
+            setSelectedPoint({ row, col });
+            setErrorMessage(null);
+
+            if (analysis) {
+                const libertyCount = analysis.liberties.length;
+                const groupSize = analysis.group.length;
+
+                if (libertyCount === 1) {
+                    setMessage(
+                        `Nhóm ${getPlayerLabel(
+                            analysis.player
+                        )} có ${groupSize} quân và chỉ còn 1 khí. Nhóm này đang bị Atari.`
+                    );
+                } else {
+                    setMessage(
+                        `Nhóm ${getPlayerLabel(
+                            analysis.player
+                        )} có ${groupSize} quân và còn ${libertyCount} khí.`
+                    );
+                }
+            }
+
             return;
         }
 
@@ -55,10 +112,17 @@ export default function GoBoard() {
             return;
         }
 
+        if (koPreviousBoard && areBoardsEqual(result.board, koPreviousBoard)) {
+            showError("Không thể đi nước này vì vi phạm luật Ko.");
+            return;
+        }
+
         setErrorMessage(null);
+        setSelectedPoint(null);
 
         const capturedCount = result.captured.length;
 
+        setKoPreviousBoard(board);
         setBoard(result.board);
 
         setMoveHistory((prev) => [
@@ -101,6 +165,9 @@ export default function GoBoard() {
 
         const nextConsecutivePasses = consecutivePasses + 1;
 
+        setSelectedPoint(null);
+        setKoPreviousBoard(null);
+
         setMoveHistory((prev) => [
             ...prev,
             {
@@ -126,12 +193,18 @@ export default function GoBoard() {
 
         setConsecutivePasses(nextConsecutivePasses);
         setCurrentPlayer(nextPlayer);
-        setMessage(`${getPlayerLabel(currentPlayer)} đã Pass. Đến lượt ${getPlayerLabel(nextPlayer)}.`);
+        setMessage(
+            `${getPlayerLabel(currentPlayer)} đã Pass. Đến lượt ${getPlayerLabel(
+                nextPlayer
+            )}.`
+        );
     }
 
     function handleResign() {
         if (gameStatus === "finished") {
-            showError("Ván cờ đã kết thúc. Không thể đầu hàng sau khi ván đã kết thúc.");
+            showError(
+                "Ván cờ đã kết thúc. Không thể đầu hàng sau khi ván đã kết thúc."
+            );
             return;
         }
 
@@ -171,15 +244,13 @@ export default function GoBoard() {
         setConsecutivePasses(0);
         setEndReason(null);
         setShowGameEndPopup(false);
+        setErrorMessage(null);
+        setSelectedPoint(null);
+        setKoPreviousBoard(null);
     }
 
     function handleExitGameMode() {
         router.push("/");
-    }
-
-    function showError(message: string) {
-        setErrorMessage(message);
-        setMessage(message);
     }
 
     return (
@@ -200,6 +271,7 @@ export default function GoBoard() {
                     onExit={handleExitGameMode}
                 />
             )}
+
             <div className="space-y-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
@@ -244,27 +316,81 @@ export default function GoBoard() {
                     <div className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm">
                         <div className="flex justify-between gap-8">
                             <span className="text-neutral-400">Đen đã bắt:</span>
-                            <span className="font-semibold text-white">{blackCaptured}</span>
+                            <span className="font-semibold text-white">
+                                {blackCaptured}
+                            </span>
                         </div>
 
                         <div className="flex justify-between gap-8">
                             <span className="text-neutral-400">Trắng đã bắt:</span>
-                            <span className="font-semibold text-white">{whiteCaptured}</span>
+                            <span className="font-semibold text-white">
+                                {whiteCaptured}
+                            </span>
+                        </div>
+
+                        <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
+                                Phân tích nhóm
+                            </p>
+
+                            {selectedAnalysis ? (
+                                <div className="mt-2 space-y-1">
+                                    <p className="text-neutral-300">
+                                        Màu:{" "}
+                                        <span className="font-semibold text-amber-300">
+                                            {getPlayerLabel(selectedAnalysis.player)}
+                                        </span>
+                                    </p>
+
+                                    <p className="text-neutral-300">
+                                        Số quân:{" "}
+                                        <span className="font-semibold text-white">
+                                            {selectedAnalysis.group.length}
+                                        </span>
+                                    </p>
+
+                                    <p className="text-neutral-300">
+                                        Số khí:{" "}
+                                        <span
+                                            className={`font-semibold ${selectedAnalysis.liberties.length === 1
+                                                ? "text-red-300"
+                                                : "text-emerald-300"
+                                                }`}
+                                        >
+                                            {selectedAnalysis.liberties.length}
+                                        </span>
+                                    </p>
+
+                                    {selectedAnalysis.liberties.length === 1 && (
+                                        <p className="text-xs text-red-300">
+                                            Nhóm này đang bị Atari, nghĩa là chỉ còn 1 khí.
+                                        </p>
+                                    )}
+                                </div>
+                            ) : (
+                                <p className="mt-2 text-xs leading-5 text-neutral-500">
+                                    Click vào một quân cờ để xem nhóm quân và các khí của nó.
+                                </p>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-2">
                             <button
                                 onClick={handlePass}
-                                disabled={gameStatus === "finished"}
-                                className="rounded-full border border-white/20 px-5 py-2 text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                className={`rounded-full border border-white/20 px-5 py-2 text-white transition hover:bg-white/10 ${gameStatus === "finished"
+                                    ? "cursor-not-allowed opacity-40"
+                                    : ""
+                                    }`}
                             >
                                 Pass
                             </button>
 
                             <button
                                 onClick={handleResign}
-                                disabled={gameStatus === "finished"}
-                                className="rounded-full border border-red-400/40 px-5 py-2 text-red-200 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                className={`rounded-full border border-red-400/40 px-5 py-2 text-red-200 transition hover:bg-red-500/10 ${gameStatus === "finished"
+                                    ? "cursor-not-allowed opacity-40"
+                                    : ""
+                                    }`}
                             >
                                 Resign
                             </button>
@@ -303,30 +429,52 @@ export default function GoBoard() {
                             ))}
 
                             {board.map((row, rowIndex) =>
-                                row.map((stone, colIndex) => (
-                                    <button
-                                        key={`${rowIndex}-${colIndex}`}
-                                        onClick={() => handlePlaceStone(rowIndex, colIndex)}
-                                        className={`absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full ${gameStatus === "finished" ? "cursor-not-allowed" : ""
-                                            }`}
-                                        style={{
-                                            left: `${(colIndex / (BOARD_SIZE - 1)) * 100}%`,
-                                            top: `${(rowIndex / (BOARD_SIZE - 1)) * 100}%`,
-                                            width: "9%",
-                                            height: "9%",
-                                        }}
-                                        aria-label={`Place stone at ${rowIndex + 1}, ${colIndex + 1}`}
-                                    >
-                                        {stone && (
-                                            <span
-                                                className={`block h-full w-full rounded-full shadow-lg ${stone === "black"
-                                                    ? "bg-neutral-950"
-                                                    : "border border-neutral-300 bg-white"
-                                                    }`}
-                                            />
-                                        )}
-                                    </button>
-                                ))
+                                row.map((stone, colIndex) => {
+                                    const pointKey = `${rowIndex},${colIndex}`;
+                                    const isGroupHighlighted =
+                                        highlightedGroupKeys.has(pointKey);
+                                    const isLibertyHighlighted =
+                                        highlightedLibertyKeys.has(pointKey);
+
+                                    return (
+                                        <button
+                                            key={`${rowIndex}-${colIndex}`}
+                                            onClick={() =>
+                                                handlePlaceStone(rowIndex, colIndex)
+                                            }
+                                            className={`absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full ${gameStatus === "finished"
+                                                ? "cursor-not-allowed"
+                                                : ""
+                                                }`}
+                                            style={{
+                                                left: `${(colIndex / (BOARD_SIZE - 1)) * 100
+                                                    }%`,
+                                                top: `${(rowIndex / (BOARD_SIZE - 1)) * 100
+                                                    }%`,
+                                                width: "9%",
+                                                height: "9%",
+                                            }}
+                                            aria-label={`Place stone at ${rowIndex + 1
+                                                }, ${colIndex + 1}`}
+                                        >
+                                            {isLibertyHighlighted && !stone && (
+                                                <span className="h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_16px_rgba(52,211,153,0.9)]" />
+                                            )}
+
+                                            {stone && (
+                                                <span
+                                                    className={`block h-full w-full rounded-full shadow-lg ring-offset-2 ring-offset-[#d8a850] ${stone === "black"
+                                                        ? "bg-neutral-950"
+                                                        : "border border-neutral-300 bg-white"
+                                                        } ${isGroupHighlighted
+                                                            ? "ring-4 ring-emerald-400"
+                                                            : ""
+                                                        }`}
+                                                />
+                                            )}
+                                        </button>
+                                    );
+                                })
                             )}
                         </div>
                     </div>
@@ -336,7 +484,9 @@ export default function GoBoard() {
                     <h3 className="mb-3 font-semibold text-white">Lịch sử nước đi</h3>
 
                     {moveHistory.length === 0 ? (
-                        <p className="text-sm text-neutral-500">Chưa có nước đi nào.</p>
+                        <p className="text-sm text-neutral-500">
+                            Chưa có nước đi nào.
+                        </p>
                     ) : (
                         <div className="max-h-48 space-y-2 overflow-auto text-sm">
                             {moveHistory.map((move) => (
@@ -347,8 +497,9 @@ export default function GoBoard() {
                                     {move.type === "stone" && (
                                         <>
                                             <span>
-                                                #{move.moveNumber} {getPlayerLabel(move.player)} đi tại
-                                                hàng {move.row + 1}, cột {move.col + 1}
+                                                #{move.moveNumber}{" "}
+                                                {getPlayerLabel(move.player)} đi tại hàng{" "}
+                                                {move.row + 1}, cột {move.col + 1}
                                             </span>
 
                                             {move.captured.length > 0 && (
@@ -361,13 +512,15 @@ export default function GoBoard() {
 
                                     {move.type === "pass" && (
                                         <span>
-                                            #{move.moveNumber} {getPlayerLabel(move.player)} Pass
+                                            #{move.moveNumber}{" "}
+                                            {getPlayerLabel(move.player)} Pass
                                         </span>
                                     )}
 
                                     {move.type === "resign" && (
                                         <span>
-                                            #{move.moveNumber} {getPlayerLabel(move.player)} đầu hàng.{" "}
+                                            #{move.moveNumber}{" "}
+                                            {getPlayerLabel(move.player)} đầu hàng.{" "}
                                             {getPlayerLabel(move.winner)} thắng.
                                         </span>
                                     )}
