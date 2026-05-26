@@ -5,8 +5,14 @@ type LessonFeedbackPopupProps = {
     type: "success" | "error";
     title: string;
     description: string;
+
     onRetry: () => void;
     onClose: () => void;
+    onBackToLearn: () => void;
+
+    nextLessonTitle?: string;
+    nextLessonStatus?: "available" | "coming-soon";
+    onNextLesson?: () => void;
 };
 
 export default function LessonFeedbackPopup({
@@ -16,10 +22,16 @@ export default function LessonFeedbackPopup({
     description,
     onRetry,
     onClose,
+    onBackToLearn,
+    nextLessonTitle,
+    nextLessonStatus,
+    onNextLesson,
 }: LessonFeedbackPopupProps) {
     if (!isOpen) return null;
 
     const isSuccess = type === "success";
+    const canGoNext = isSuccess && nextLessonStatus === "available" && onNextLesson;
+    const hasComingSoonNext = isSuccess && nextLessonStatus === "coming-soon";
 
     return (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
@@ -29,7 +41,7 @@ export default function LessonFeedbackPopup({
                 </div>
 
                 <p className="text-xs font-semibold uppercase tracking-[0.3em] text-neutral-500">
-                    {isSuccess ? "Correct Move" : "Try Again"}
+                    {isSuccess ? "Lesson Complete" : "Try Again"}
                 </p>
 
                 <h2
@@ -43,20 +55,69 @@ export default function LessonFeedbackPopup({
                     {description}
                 </p>
 
-                <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <button
-                        onClick={onRetry}
-                        className="rounded-full bg-amber-400 px-5 py-3 text-sm font-semibold text-black transition hover:bg-amber-300"
-                    >
-                        Làm lại
-                    </button>
+                {isSuccess && nextLessonTitle && (
+                    <p className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-neutral-300">
+                        Bài tiếp theo:{" "}
+                        <span className="font-semibold text-amber-300">
+                            {nextLessonTitle}
+                        </span>
+                    </p>
+                )}
 
-                    <button
-                        onClick={onClose}
-                        className="rounded-full border border-white/20 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-                    >
-                        Tiếp tục xem
-                    </button>
+                <div className="mt-6 grid gap-3">
+                    {!isSuccess && (
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <button
+                                onClick={onRetry}
+                                className="rounded-full bg-amber-400 px-5 py-3 text-sm font-semibold text-black transition hover:bg-amber-300"
+                            >
+                                Thử lại
+                            </button>
+
+                            <button
+                                onClick={onClose}
+                                className="rounded-full border border-white/20 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                            >
+                                Xem gợi ý
+                            </button>
+                        </div>
+                    )}
+
+                    {canGoNext && (
+                        <button
+                            onClick={onNextLesson}
+                            className="rounded-full bg-emerald-400 px-5 py-3 text-sm font-semibold text-black transition hover:bg-emerald-300"
+                        >
+                            Bài tiếp theo →
+                        </button>
+                    )}
+
+                    {hasComingSoonNext && (
+                        <button
+                            onClick={onBackToLearn}
+                            className="rounded-full bg-amber-400 px-5 py-3 text-sm font-semibold text-black transition hover:bg-amber-300"
+                        >
+                            Xem lộ trình học
+                        </button>
+                    )}
+
+                    {isSuccess && (
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <button
+                                onClick={onRetry}
+                                className="rounded-full border border-white/20 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                            >
+                                Học lại
+                            </button>
+
+                            <button
+                                onClick={onBackToLearn}
+                                className="rounded-full border border-white/20 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                            >
+                                Lộ trình học
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

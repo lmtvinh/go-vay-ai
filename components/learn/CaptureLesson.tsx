@@ -12,6 +12,8 @@ import {
 import type { Board, Player, Point } from "@/lib/go/types";
 import LessonFeedbackPopup from "@/components/ui/LessonFeedbackPopup";
 import BoardGrid from "@/components/goban/BoardGrid";
+import { useRouter } from "next/navigation";
+import { getNextLesson } from "@/lib/learn/lessons";
 
 type Feedback = {
     type: "success" | "error";
@@ -41,6 +43,8 @@ export default function CaptureLesson() {
     const [currentPlayer] = useState<Player>("black");
     const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
     const [feedback, setFeedback] = useState<Feedback | null>(null);
+    const router = useRouter();
+    const nextLesson = getNextLesson("capture");
 
     const selectedAnalysis = selectedPoint
         ? getStoneGroupAnalysis(board, selectedPoint.row, selectedPoint.col)
@@ -111,14 +115,14 @@ export default function CaptureLesson() {
                 description={feedback?.description ?? ""}
                 onRetry={resetLesson}
                 onClose={() => setFeedback(null)}
-            />
-
-            <BoardGrid
-                board={board}
-                onPointClick={handleClick}
-                highlightedGroupKeys={highlightedGroupKeys}
-                highlightedLibertyKeys={highlightedLibertyKeys}
-                ariaLabelPrefix="Lesson point"
+                onBackToLearn={() => router.push("/learn")}
+                nextLessonTitle={nextLesson?.title}
+                nextLessonStatus={nextLesson?.status}
+                onNextLesson={() => {
+                    if (nextLesson?.status === "available") {
+                        router.push(nextLesson.href);
+                    }
+                }}
             />
         </>
     );
