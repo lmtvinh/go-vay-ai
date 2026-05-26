@@ -1,9 +1,14 @@
-import Link from "next/link";
+import LessonCard from "@/components/learn/LessonCard";
+import { lessons } from "@/lib/learn/lessons";
 
 export default function LearnPage() {
+    const availableLessons = lessons.filter(
+        (lesson) => lesson.status === "available"
+    );
+
     return (
         <main className="min-h-screen bg-neutral-950 px-6 py-8 text-white">
-            <div className="mx-auto max-w-5xl space-y-8">
+            <div className="mx-auto max-w-6xl space-y-8">
                 <header className="space-y-3">
                     <p className="text-sm uppercase tracking-[0.3em] text-amber-400">
                         Learn Go
@@ -17,70 +22,44 @@ export default function LearnPage() {
                     </p>
                 </header>
 
-                <section className="grid gap-4 md:grid-cols-2">
-                    <Link
-                        href="/learn/capture"
-                        className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 transition hover:bg-white/[0.06]"
-                    >
-                        <p className="text-sm uppercase tracking-[0.2em] text-neutral-500">
-                            Bài học 01
+                <section className="grid gap-4 rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:grid-cols-3">
+                    <div>
+                        <p className="text-sm text-neutral-500">Bài học hiện có</p>
+                        <p className="mt-1 text-3xl font-bold text-white">
+                            {availableLessons.length}
                         </p>
+                    </div>
 
-                        <h2 className="mt-3 text-2xl font-bold">
-                            Bắt quân trong 1 nước
-                        </h2>
-
-                        <p className="mt-3 text-sm leading-6 text-neutral-400">
-                            Học cách nhìn khí cuối cùng của quân đối thủ và bắt quân.
+                    <div>
+                        <p className="text-sm text-neutral-500">Cấp độ hiện tại</p>
+                        <p className="mt-1 text-3xl font-bold text-amber-300">
+                            Beginner
                         </p>
-                    </Link>
+                    </div>
 
-                    <Link
-                        href="/learn/atari"
-                        className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 transition hover:bg-white/[0.06]"
-                    >
-                        <p className="text-sm uppercase tracking-[0.2em] text-neutral-500">
-                            Bài học 02
+                    <div>
+                        <p className="text-sm text-neutral-500">Mục tiêu</p>
+                        <p className="mt-1 text-3xl font-bold text-emerald-300">
+                            Nắm luật cơ bản
                         </p>
+                    </div>
+                </section>
 
-                        <h2 className="mt-3 text-2xl font-bold">
-                            Atari: nhóm chỉ còn 1 khí
-                        </h2>
+                <section className="space-y-4">
+                    <div className="flex items-end justify-between gap-4">
+                        <div>
+                            <h2 className="text-2xl font-bold">Bài học</h2>
+                            <p className="mt-1 text-sm text-neutral-500">
+                                Đi theo thứ tự để xây nền cờ vây từ luật cơ bản.
+                            </p>
+                        </div>
+                    </div>
 
-                        <p className="mt-3 text-sm leading-6 text-neutral-400">
-                            Học cách nhận ra một nhóm quân đang nguy hiểm và tìm nước thoát Atari.
-                        </p>
-                    </Link>
-
-                    <Link
-                        href="/learn/suicide"
-                        className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 transition hover:bg-white/[0.06]"
-                    >
-                        <p className="text-sm uppercase tracking-[0.2em] text-neutral-500">
-                            Bài học 03
-                        </p>
-
-                        <h2 className="mt-3 text-2xl font-bold">Nước tự sát</h2>
-
-                        <p className="mt-3 text-sm leading-6 text-neutral-400">
-                            Hiểu vì sao một số nước đi không hợp lệ trong cờ vây.
-                        </p>
-                    </Link>
-
-                    <Link
-                        href="/learn/ko"
-                        className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 transition hover:bg-white/[0.06]"
-                    >
-                        <p className="text-sm uppercase tracking-[0.2em] text-neutral-500">
-                            Bài học 04
-                        </p>
-
-                        <h2 className="mt-3 text-2xl font-bold">Luật Ko</h2>
-
-                        <p className="mt-3 text-sm leading-6 text-neutral-400">
-                            Hiểu vì sao không được bắt lại ngay trong một số tình huống.
-                        </p>
-                    </Link>
+                    <div className="grid gap-4 md:grid-cols-2">
+                        {lessons.map((lesson) => (
+                            <LessonCard key={lesson.id} lesson={lesson} />
+                        ))}
+                    </div>
                 </section>
             </div>
         </main>
