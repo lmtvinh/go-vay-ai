@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import {
     createEmptyBoard,
@@ -10,9 +11,8 @@ import {
 } from "@/lib/go/board";
 
 import type { Board, Player, Point } from "@/lib/go/types";
-import LessonFeedbackPopup from "@/components/ui/LessonFeedbackPopup";
 import BoardGrid from "@/components/goban/BoardGrid";
-import { useRouter } from "next/navigation";
+import LessonFeedbackPopup from "@/components/ui/LessonFeedbackPopup";
 import { getNextLesson } from "@/lib/learn/lessons";
 
 type Feedback = {
@@ -28,8 +28,6 @@ function getPointKey(point: Point) {
 function createCaptureLessonBoard(): Board {
     const board = createEmptyBoard();
 
-    // Bài học: quân trắng ở giữa chỉ còn 1 khí bên phải.
-    // Đen cần đi hàng 5, cột 6 để bắt quân trắng.
     board[4][4] = "white";
     board[3][4] = "black";
     board[4][3] = "black";
@@ -39,11 +37,13 @@ function createCaptureLessonBoard(): Board {
 }
 
 export default function CaptureLesson() {
+    const router = useRouter();
+
     const [board, setBoard] = useState<Board>(() => createCaptureLessonBoard());
     const [currentPlayer] = useState<Player>("black");
     const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
     const [feedback, setFeedback] = useState<Feedback | null>(null);
-    const router = useRouter();
+
     const nextLesson = getNextLesson("capture");
 
     const selectedAnalysis = selectedPoint
@@ -124,6 +124,120 @@ export default function CaptureLesson() {
                     }
                 }}
             />
+
+            <div className="space-y-8">
+                <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 md:p-8">
+                    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <p className="text-sm uppercase tracking-[0.3em] text-amber-400">
+                                Bài học 01
+                            </p>
+
+                            <h1 className="mt-2 text-3xl font-bold text-white">
+                                Bắt quân trong 1 nước
+                            </h1>
+
+                            <p className="mt-3 max-w-2xl text-neutral-400">
+                                Quân trắng ở giữa chỉ còn một khí. Hãy tìm nước đi
+                                giúp Đen chặn khí cuối cùng và bắt quân trắng.
+                            </p>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={resetLesson}
+                                className="rounded-full border border-white/20 px-5 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+                            >
+                                Làm lại
+                            </button>
+
+                            <Link
+                                href="/learn"
+                                className="rounded-full border border-white/20 px-5 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+                            >
+                                Thoát
+                            </Link>
+                        </div>
+                    </div>
+
+                    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+                        <BoardGrid
+                            board={board}
+                            onPointClick={handleClick}
+                            highlightedGroupKeys={highlightedGroupKeys}
+                            highlightedLibertyKeys={highlightedLibertyKeys}
+                            ariaLabelPrefix="Capture lesson point"
+                        />
+
+                        <aside className="space-y-4 rounded-3xl border border-white/10 bg-black/20 p-5">
+                            <div>
+                                <h2 className="text-lg font-bold text-white">
+                                    Mục tiêu
+                                </h2>
+
+                                <p className="mt-2 text-sm leading-6 text-neutral-400">
+                                    Click vào khí cuối cùng của quân trắng để bắt nó.
+                                </p>
+                            </div>
+
+                            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
+                                    Gợi ý
+                                </p>
+
+                                <p className="mt-2 text-sm leading-6 text-neutral-300">
+                                    Click vào quân trắng để xem các khí của nó. Chấm
+                                    xanh là khí còn lại.
+                                </p>
+                            </div>
+
+                            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
+                                    Phân tích
+                                </p>
+
+                                {selectedAnalysis ? (
+                                    <div className="mt-2 space-y-1 text-sm text-neutral-300">
+                                        <p>
+                                            Màu:{" "}
+                                            <span className="font-semibold text-amber-300">
+                                                {selectedAnalysis.player === "black"
+                                                    ? "Đen"
+                                                    : "Trắng"}
+                                            </span>
+                                        </p>
+
+                                        <p>Số quân: {selectedAnalysis.group.length}</p>
+
+                                        <p>
+                                            Số khí:{" "}
+                                            <span
+                                                className={
+                                                    selectedAnalysis.liberties.length === 1
+                                                        ? "font-semibold text-red-300"
+                                                        : "font-semibold text-emerald-300"
+                                                }
+                                            >
+                                                {selectedAnalysis.liberties.length}
+                                            </span>
+                                        </p>
+
+                                        {selectedAnalysis.liberties.length === 1 && (
+                                            <p className="text-xs text-red-300">
+                                                Nhóm này đang bị Atari, nghĩa là chỉ còn 1 khí.
+                                            </p>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <p className="mt-2 text-sm leading-6 text-neutral-500">
+                                        Click vào một quân để xem nhóm và khí.
+                                    </p>
+                                )}
+                            </div>
+                        </aside>
+                    </div>
+                </section>
+            </div>
         </>
     );
 }
