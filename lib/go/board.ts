@@ -35,7 +35,7 @@ function getNeighbors(board: Board, row: number, col: number): Point[] {
   return candidates.filter((point) => isOnBoard(board, point.row, point.col));
 }
 
-function getGroupAndLiberties(board: Board, row: number, col: number) {
+export function getGroupAndLiberties(board: Board, row: number, col: number) {
   const color = board[row][col];
 
   if (!color) {
@@ -174,4 +174,27 @@ export function areBoardsEqual(boardA: Board, boardB: Board): boolean {
     }
 
     return true;
+}
+
+export function parsePointKey(key: string): Point {
+  const [row, col] = key.split(",").map(Number);
+
+  return {
+    row,
+    col,
+  };
+}
+
+export function getStoneGroupAnalysis(board: Board, row: number, col: number) {
+  const stone = board[row][col];
+
+  if (!stone) return null;
+
+  const analysis = getGroupAndLiberties(board, row, col);
+
+  return {
+    player: stone,
+    group: analysis.group,
+    liberties: Array.from(analysis.liberties).map(parsePointKey),
+  };
 }
