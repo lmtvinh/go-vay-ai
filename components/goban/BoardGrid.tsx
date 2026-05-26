@@ -59,8 +59,10 @@ export default function BoardGrid({
                                     className={`absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full ${isDisabled ? "cursor-not-allowed" : ""
                                         }`}
                                     style={{
-                                        left: `${(colIndex / (BOARD_SIZE - 1)) * 100}%`,
-                                        top: `${(rowIndex / (BOARD_SIZE - 1)) * 100}%`,
+                                        left: `${(colIndex / (BOARD_SIZE - 1)) * 100
+                                            }%`,
+                                        top: `${(rowIndex / (BOARD_SIZE - 1)) * 100
+                                            }%`,
                                         width: "9%",
                                         height: "9%",
                                     }}
