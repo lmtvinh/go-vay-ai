@@ -31,7 +31,7 @@ export const lessons: Lesson[] = [
         title: "Nước tự sát",
         description: "Hiểu vì sao một số nước đi không hợp lệ trong cờ vây.",
         href: "/learn/suicide",
-        status: "coming-soon",
+        status: "available",
     },
     {
         id: "ko",
