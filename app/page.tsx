@@ -28,7 +28,7 @@ export default function Home() {
           </Link>
 
           <Link
-            href="#"
+            href="/learn"
             className="rounded-full border border-white/20 px-8 py-3 font-semibold hover:bg-white/10 transition"
           >
             Xem lộ trình học
