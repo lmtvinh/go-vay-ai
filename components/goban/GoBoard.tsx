@@ -25,6 +25,7 @@ import ErrorPopup from "@/components/ui/ErrorPopup";
 import GameEndPopup from "@/components/ui/GameEndPopup";
 import BoardGrid from "@/components/goban/BoardGrid";
 import { saveLatestGameReview } from "@/lib/go/gameReviewStorage";
+import { calculateBasicScore } from "@/lib/go/scoring";
 
 const SUPPORTED_BOARD_SIZES = [9, 12, 13, 19] as const;
 
@@ -84,10 +85,12 @@ export default function GoBoard() {
         nextMoves,
         gameWinner,
         reason,
+        score,
     }: {
         nextMoves: Move[];
         gameWinner: Player | null;
         reason: GameEndReason;
+        score?: ReturnType<typeof calculateBasicScore>;
     }) {
         saveLatestGameReview({
             boardSize,
@@ -98,6 +101,7 @@ export default function GoBoard() {
             winner: gameWinner,
             endReason: reason,
             createdAt: new Date().toISOString(),
+            score,
         });
     }
 
@@ -238,21 +242,33 @@ export default function GoBoard() {
         setMoveHistory(nextMoves);
 
         if (nextConsecutivePasses >= 2) {
+            const score = calculateBasicScore(board, blackCaptured, whiteCaptured);
+
             setGameStatus("finished");
-            setWinner(null);
-            setEndReason("double-pass");
+            setWinner(score.winner);
+            setEndReason("score");
             setShowGameEndPopup(true);
             setConsecutivePasses(nextConsecutivePasses);
 
             saveReviewData({
                 nextMoves,
-                gameWinner: null,
-                reason: "double-pass",
+                gameWinner: score.winner,
+                reason: "score",
+                score,
             });
 
-            setMessage(
-                "Hai người chơi đã Pass liên tiếp. Ván cờ kết thúc. Chưa tính điểm ở phiên bản này."
-            );
+            if (score.winner) {
+                setMessage(
+                    `Hai người chơi đã Pass liên tiếp. ${getPlayerLabel(
+                        score.winner
+                    )} thắng ${score.margin} điểm theo cách tính cơ bản.`
+                );
+            } else {
+                setMessage(
+                    "Hai người chơi đã Pass liên tiếp. Ván cờ hòa theo cách tính cơ bản."
+                );
+            }
+
             return;
         }
 
