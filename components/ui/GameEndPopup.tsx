@@ -10,6 +10,7 @@ type GameEndPopupProps = {
     reason: GameEndReason;
     onPlayAgain: () => void;
     onExit: () => void;
+    onReview?: () => void;
 };
 
 function getPlayerLabel(player: Player) {
@@ -125,6 +126,7 @@ export default function GameEndPopup({
     reason,
     onPlayAgain,
     onExit,
+    onReview,
 }: GameEndPopupProps) {
     if (!isOpen) return null;
 
@@ -161,20 +163,31 @@ export default function GameEndPopup({
                     {content.description}
                 </p>
 
-                <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <button
-                        onClick={onPlayAgain}
-                        className="rounded-full bg-amber-400 px-5 py-3 text-sm font-semibold text-black transition hover:bg-amber-300"
-                    >
-                        Chơi lại
-                    </button>
+                <div className="mt-6 grid gap-3">
+                    {onReview && (
+                        <button
+                            onClick={onReview}
+                            className="rounded-full bg-emerald-400 px-5 py-3 text-sm font-semibold text-black transition hover:bg-emerald-300"
+                        >
+                            Xem phân tích
+                        </button>
+                    )}
 
-                    <button
-                        onClick={onExit}
-                        className="rounded-full border border-white/20 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-                    >
-                        Thoát chế độ này
-                    </button>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <button
+                            onClick={onPlayAgain}
+                            className="rounded-full bg-amber-400 px-5 py-3 text-sm font-semibold text-black transition hover:bg-amber-300"
+                        >
+                            Chơi lại
+                        </button>
+
+                        <button
+                            onClick={onExit}
+                            className="rounded-full border border-white/20 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                        >
+                            Thoát chế độ này
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
