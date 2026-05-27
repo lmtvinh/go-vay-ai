@@ -25,6 +25,7 @@ import type {
 import ErrorPopup from "@/components/ui/ErrorPopup";
 import GameEndPopup from "@/components/ui/GameEndPopup";
 import BoardGrid from "@/components/goban/BoardGrid";
+import { saveLatestGameReview } from "@/lib/go/gameReviewStorage";
 
 function getPlayerLabel(player: Player) {
     return player === "black" ? "Đen" : "Trắng";
@@ -169,14 +170,15 @@ export default function GoBoard() {
         setSelectedPoint(null);
         setKoPreviousBoard(null);
 
-        setMoveHistory((prev) => [
-            ...prev,
-            {
-                type: "pass",
-                player: currentPlayer,
-                moveNumber: prev.length + 1,
-            },
-        ]);
+        const nextMove: Move = {
+            type: "pass",
+            player: currentPlayer,
+            moveNumber: moveHistory.length + 1,
+        };
+
+        const nextMoves = [...moveHistory, nextMove];
+
+        setMoveHistory(nextMoves);
 
         if (nextConsecutivePasses >= 2) {
             setGameStatus("finished");
@@ -184,6 +186,13 @@ export default function GoBoard() {
             setEndReason("double-pass");
             setShowGameEndPopup(true);
             setConsecutivePasses(nextConsecutivePasses);
+
+            saveReviewData({
+                nextMoves,
+                gameWinner: null,
+                reason: "double-pass",
+            });
+
             setMessage(
                 "Hai người chơi đã Pass liên tiếp. Ván cờ kết thúc. Chưa tính điểm ở phiên bản này."
             );
@@ -211,20 +220,27 @@ export default function GoBoard() {
 
         const gameWinner = getOpponent(currentPlayer);
 
-        setMoveHistory((prev) => [
-            ...prev,
-            {
-                type: "resign",
-                player: currentPlayer,
-                winner: gameWinner,
-                moveNumber: prev.length + 1,
-            },
-        ]);
+        const nextMove: Move = {
+            type: "resign",
+            player: currentPlayer,
+            winner: gameWinner,
+            moveNumber: moveHistory.length + 1,
+        };
+
+        const nextMoves = [...moveHistory, nextMove];
+
+        setMoveHistory(nextMoves);
 
         setWinner(gameWinner);
         setGameStatus("finished");
         setEndReason("resign");
         setShowGameEndPopup(true);
+
+        saveReviewData({
+            nextMoves,
+            gameWinner,
+            reason: "resign",
+        });
 
         setMessage(
             `${getPlayerLabel(currentPlayer)} đã đầu hàng. ${getPlayerLabel(
@@ -254,6 +270,30 @@ export default function GoBoard() {
         router.push("/");
     }
 
+    function saveReviewData({
+        nextMoves,
+        gameWinner,
+        reason,
+    }: {
+        nextMoves: Move[];
+        gameWinner: Player | null;
+        reason: GameEndReason;
+    }) {
+        saveLatestGameReview({
+            board,
+            moves: nextMoves,
+            blackCaptured,
+            whiteCaptured,
+            winner: gameWinner,
+            endReason: reason,
+            createdAt: new Date().toISOString(),
+        });
+    }
+
+    function handleReviewGame() {
+        router.push("/review/latest");
+    }
+
     return (
         <>
             <ErrorPopup
@@ -270,6 +310,7 @@ export default function GoBoard() {
                     reason={endReason}
                     onPlayAgain={handleReset}
                     onExit={handleExitGameMode}
+                    onReview={handleReviewGame}
                 />
             )}
 
