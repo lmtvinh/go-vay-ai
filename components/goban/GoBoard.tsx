@@ -60,6 +60,8 @@ export default function GoBoard() {
     const [koPreviousBoard, setKoPreviousBoard] = useState<Board | null>(null);
     const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
     const [lastMovePoint, setLastMovePoint] = useState<Point | null>(null);
+    const [focusedHistoryPoint, setFocusedHistoryPoint] =
+        useState<Point | null>(null);
 
     const selectedAnalysis = selectedPoint
         ? getStoneGroupAnalysis(board, selectedPoint.row, selectedPoint.col)
@@ -114,6 +116,7 @@ export default function GoBoard() {
         setErrorMessage(null);
         setSelectedPoint(null);
         setLastMovePoint(null);
+        setFocusedHistoryPoint(null);
         setKoPreviousBoard(null);
     }
 
@@ -131,9 +134,9 @@ export default function GoBoard() {
         if (board[row][col] !== null) {
             const analysis = getStoneGroupAnalysis(board, row, col);
 
-            setErrorMessage(null);
             setSelectedPoint({ row, col });
-            setLastMovePoint({ row, col });
+            setFocusedHistoryPoint(null);
+            setErrorMessage(null);
 
             if (analysis) {
                 const libertyCount = analysis.liberties.length;
@@ -171,6 +174,8 @@ export default function GoBoard() {
 
         setErrorMessage(null);
         setSelectedPoint(null);
+        setLastMovePoint({ row, col });
+        setFocusedHistoryPoint(null);
 
         const capturedCount = result.captured.length;
 
@@ -218,8 +223,9 @@ export default function GoBoard() {
         const nextConsecutivePasses = consecutivePasses + 1;
 
         setSelectedPoint(null);
-        setKoPreviousBoard(null);
         setLastMovePoint(null);
+        setFocusedHistoryPoint(null);
+        setKoPreviousBoard(null);
 
         const nextMove: Move = {
             type: "pass",
@@ -286,6 +292,7 @@ export default function GoBoard() {
         setEndReason("resign");
         setShowGameEndPopup(true);
         setLastMovePoint(null);
+        setFocusedHistoryPoint(null);
 
         saveReviewData({
             nextMoves,
@@ -310,6 +317,21 @@ export default function GoBoard() {
 
     function handleReviewGame() {
         router.push("/review/latest");
+    }
+
+    function handleHistoryMoveClick(move: Move) {
+        if (move.type !== "stone") return;
+
+        setFocusedHistoryPoint({
+            row: move.row,
+            col: move.col,
+        });
+
+        setMessage(
+            `Đang xem lại nước #${move.moveNumber}: ${getPlayerLabel(
+                move.player
+            )} đi tại hàng ${move.row + 1}, cột ${move.col + 1}.`
+        );
     }
 
     return (
@@ -384,6 +406,7 @@ export default function GoBoard() {
                             {SUPPORTED_BOARD_SIZES.map((size) => (
                                 <button
                                     key={size}
+                                    type="button"
                                     onClick={() => handleBoardSizeChange(size)}
                                     className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${boardSize === size
                                         ? "border-amber-300 bg-amber-400 text-black"
@@ -459,6 +482,7 @@ export default function GoBoard() {
 
                         <div className="grid grid-cols-2 gap-2">
                             <button
+                                type="button"
                                 onClick={handlePass}
                                 className={`rounded-full border border-white/20 px-5 py-2 text-white transition hover:bg-white/10 ${gameStatus === "finished"
                                     ? "cursor-not-allowed opacity-40"
@@ -469,6 +493,7 @@ export default function GoBoard() {
                             </button>
 
                             <button
+                                type="button"
                                 onClick={handleResign}
                                 className={`rounded-full border border-red-400/40 px-5 py-2 text-red-200 transition hover:bg-red-500/10 ${gameStatus === "finished"
                                     ? "cursor-not-allowed opacity-40"
@@ -480,6 +505,7 @@ export default function GoBoard() {
                         </div>
 
                         <button
+                            type="button"
                             onClick={handleReset}
                             className="w-full rounded-full border border-white/20 px-5 py-2 text-white transition hover:bg-white/10"
                         >
@@ -497,6 +523,7 @@ export default function GoBoard() {
                     ariaLabelPrefix="Place stone at"
                     previewPlayer={currentPlayer}
                     lastMovePoint={lastMovePoint}
+                    focusedPoint={focusedHistoryPoint}
                 />
 
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -511,9 +538,14 @@ export default function GoBoard() {
                     ) : (
                         <div className="max-h-48 space-y-2 overflow-auto text-sm">
                             {moveHistory.map((move) => (
-                                <div
+                                <button
                                     key={move.moveNumber}
-                                    className="flex items-center justify-between rounded-xl bg-black/20 px-3 py-2"
+                                    type="button"
+                                    onClick={() => handleHistoryMoveClick(move)}
+                                    className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition ${move.type === "stone"
+                                        ? "cursor-pointer bg-black/20 hover:bg-white/10"
+                                        : "cursor-default bg-black/20"
+                                        }`}
                                 >
                                     {move.type === "stone" && (
                                         <>
@@ -545,7 +577,7 @@ export default function GoBoard() {
                                             {getPlayerLabel(move.winner)} thắng.
                                         </span>
                                     )}
-                                </div>
+                                </button>
                             ))}
                         </div>
                     )}

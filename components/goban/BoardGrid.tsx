@@ -12,6 +12,7 @@ type BoardGridProps = {
     showCoordinates?: boolean;
     previewPlayer?: Player | null;
     lastMovePoint?: Point | null;
+    focusedPoint?: Point | null;
 };
 
 const BOARD_INSET_PERCENT = 12;
@@ -27,6 +28,7 @@ export default function BoardGrid({
     showCoordinates = true,
     previewPlayer = null,
     lastMovePoint = null,
+    focusedPoint = null,
 }: BoardGridProps) {
     const size = board.length;
     const indices = Array.from({ length: size }, (_, index) => index);
@@ -43,7 +45,6 @@ export default function BoardGrid({
     return (
         <div className="w-full overflow-auto">
             <div className="relative mx-auto aspect-square w-[min(92vw,640px)] rounded-2xl bg-[#d8a850] shadow-2xl">
-                {/* Top coordinates */}
                 {showCoordinates &&
                     indices.map((index) => (
                         <span
@@ -59,7 +60,6 @@ export default function BoardGrid({
                         </span>
                     ))}
 
-                {/* Bottom coordinates */}
                 {showCoordinates &&
                     indices.map((index) => (
                         <span
@@ -75,7 +75,6 @@ export default function BoardGrid({
                         </span>
                     ))}
 
-                {/* Left coordinates */}
                 {showCoordinates &&
                     indices.map((index) => (
                         <span
@@ -91,7 +90,6 @@ export default function BoardGrid({
                         </span>
                     ))}
 
-                {/* Right coordinates */}
                 {showCoordinates &&
                     indices.map((index) => (
                         <span
@@ -107,7 +105,6 @@ export default function BoardGrid({
                         </span>
                     ))}
 
-                {/* Board lines */}
                 <div
                     className="pointer-events-none absolute"
                     style={{
@@ -144,7 +141,6 @@ export default function BoardGrid({
                     ))}
                 </div>
 
-                {/* Stones / clickable points */}
                 {board.map((row, rowIndex) =>
                     row.map((stone, colIndex) => {
                         const pointKey = `${rowIndex},${colIndex}`;
@@ -159,9 +155,14 @@ export default function BoardGrid({
                             lastMovePoint?.row === rowIndex &&
                             lastMovePoint?.col === colIndex;
 
+                        const isFocusedPoint =
+                            focusedPoint?.row === rowIndex &&
+                            focusedPoint?.col === colIndex;
+
                         return (
                             <button
                                 key={`${rowIndex}-${colIndex}`}
+                                type="button"
                                 onClick={() => onPointClick(rowIndex, colIndex)}
                                 className={`group absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full ${isDisabled ? "cursor-not-allowed" : ""
                                     }`}
@@ -175,6 +176,10 @@ export default function BoardGrid({
                                     }, ${colIndex + 1}`}
                             >
                                 <div className="relative flex h-full w-full items-center justify-center">
+                                    {isFocusedPoint && (
+                                        <span className="pointer-events-none absolute -inset-2 z-40 rounded-full border-2 border-amber-300 shadow-[0_0_18px_rgba(251,191,36,0.9)]" />
+                                    )}
+
                                     {isLibertyHighlighted && !stone && (
                                         <span className="absolute z-10 h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_16px_rgba(52,211,153,0.9)] group-hover:hidden" />
                                     )}
