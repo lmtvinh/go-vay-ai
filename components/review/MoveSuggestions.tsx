@@ -2,11 +2,12 @@
 
 import { useMemo } from "react";
 
-import type { Move } from "@/lib/go/types";
+import type { Move, Point } from "@/lib/go/types";
 import { getBasicMoveSuggestions } from "@/lib/go/reviewSuggestions";
 
 type MoveSuggestionsProps = {
     moves: Move[];
+    onFocusPoint?: (point: Point) => void;
 };
 
 function getPlayerLabel(player: "black" | "white") {
@@ -25,7 +26,7 @@ function getSeverityClassName(severity: "low" | "medium" | "high") {
     return "bg-emerald-400/10 text-emerald-300";
 }
 
-export default function MoveSuggestions({ moves }: MoveSuggestionsProps) {
+export default function MoveSuggestions({ moves, onFocusPoint }: MoveSuggestionsProps) {
     const suggestions = useMemo(() => getBasicMoveSuggestions(moves), [moves]);
 
     return (
@@ -96,9 +97,16 @@ export default function MoveSuggestions({ moves }: MoveSuggestionsProps) {
 
                             <div className="mt-4 grid gap-3 md:grid-cols-3">
                                 {suggestion.suggestedMoves.map((move, index) => (
-                                    <div
+                                    <button
                                         key={`${move.row}-${move.col}`}
-                                        className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                                        type="button"
+                                        onClick={() =>
+                                            onFocusPoint?.({
+                                                row: move.row,
+                                                col: move.col,
+                                            })
+                                        }
+                                        className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left transition hover:border-amber-300/40 hover:bg-white/[0.06]"
                                     >
                                         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
                                             Gợi ý {index + 1}
@@ -111,7 +119,7 @@ export default function MoveSuggestions({ moves }: MoveSuggestionsProps) {
                                         <p className="mt-2 text-xs leading-5 text-neutral-400">
                                             {move.reason}
                                         </p>
-                                    </div>
+                                    </button>
                                 ))}
                             </div>
                         </article>

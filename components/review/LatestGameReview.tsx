@@ -7,6 +7,7 @@ import type { SavedGameReview } from "@/lib/go/gameReviewStorage";
 import { readLatestGameReview } from "@/lib/go/gameReviewStorage";
 import GameReplay from "@/components/review/GameReplay";
 import MoveSuggestions from "@/components/review/MoveSuggestions";
+import type { Point } from "@/lib/go/types";
 
 function getPlayerLabel(player: "black" | "white") {
     return player === "black" ? "Đen" : "Trắng";
@@ -21,6 +22,7 @@ function getEndReasonLabel(reason: SavedGameReview["endReason"]) {
 
 export default function LatestGameReview() {
     const [review, setReview] = useState<SavedGameReview | null>(null);
+    const [focusedReviewPoint, setFocusedReviewPoint] = useState<Point | null>(null);
 
     useEffect(() => {
         setReview(readLatestGameReview());
@@ -131,9 +133,24 @@ export default function LatestGameReview() {
                 </div>
             </section>
 
-            <GameReplay moves={review.moves} />
+            {focusedReviewPoint && (
+                <div className="rounded-2xl border border-amber-300/20 bg-amber-400/10 px-5 py-3 text-sm text-amber-200">
+                    Đang highlight gợi ý tại hàng {focusedReviewPoint.row + 1}, cột{" "}
+                    {focusedReviewPoint.col + 1}.
+                </div>
+            )}
 
-            <MoveSuggestions moves={review.moves} />
+            <GameReplay
+                moves={review.moves}
+                focusedPoint={focusedReviewPoint}
+            />
+
+            <MoveSuggestions
+                moves={review.moves}
+                onFocusPoint={(point) => {
+                    setFocusedReviewPoint(point);
+                }}
+            />
 
             <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
                 <h2 className="text-2xl font-bold text-white">Nhận xét cơ bản</h2>
