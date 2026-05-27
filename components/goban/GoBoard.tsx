@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import {
-    BOARD_SIZE,
     areBoardsEqual,
     createEmptyBoard,
     getOpponent,
@@ -27,6 +26,10 @@ import GameEndPopup from "@/components/ui/GameEndPopup";
 import BoardGrid from "@/components/goban/BoardGrid";
 import { saveLatestGameReview } from "@/lib/go/gameReviewStorage";
 
+const SUPPORTED_BOARD_SIZES = [9, 12, 13, 19] as const;
+
+type BoardSize = (typeof SUPPORTED_BOARD_SIZES)[number];
+
 function getPlayerLabel(player: Player) {
     return player === "black" ? "Đen" : "Trắng";
 }
@@ -38,7 +41,8 @@ function getPointKey(point: Point) {
 export default function GoBoard() {
     const router = useRouter();
 
-    const [board, setBoard] = useState<Board>(() => createEmptyBoard());
+    const [boardSize, setBoardSize] = useState<BoardSize>(9);
+    const [board, setBoard] = useState<Board>(() => createEmptyBoard(9));
     const [currentPlayer, setCurrentPlayer] = useState<Player>("black");
     const [moveHistory, setMoveHistory] = useState<Move[]>([]);
     const [blackCaptured, setBlackCaptured] = useState(0);
@@ -71,6 +75,49 @@ export default function GoBoard() {
     function showError(error: string) {
         setErrorMessage(error);
         setMessage(error);
+    }
+
+    function saveReviewData({
+        nextMoves,
+        gameWinner,
+        reason,
+    }: {
+        nextMoves: Move[];
+        gameWinner: Player | null;
+        reason: GameEndReason;
+    }) {
+        saveLatestGameReview({
+            boardSize,
+            board,
+            moves: nextMoves,
+            blackCaptured,
+            whiteCaptured,
+            winner: gameWinner,
+            endReason: reason,
+            createdAt: new Date().toISOString(),
+        });
+    }
+
+    function resetGame(nextBoardSize: BoardSize = boardSize) {
+        setBoard(createEmptyBoard(nextBoardSize));
+        setCurrentPlayer("black");
+        setMoveHistory([]);
+        setBlackCaptured(0);
+        setWhiteCaptured(0);
+        setMessage("Đen đi trước.");
+        setGameStatus("playing");
+        setWinner(null);
+        setConsecutivePasses(0);
+        setEndReason(null);
+        setShowGameEndPopup(false);
+        setErrorMessage(null);
+        setSelectedPoint(null);
+        setKoPreviousBoard(null);
+    }
+
+    function handleBoardSizeChange(nextBoardSize: BoardSize) {
+        setBoardSize(nextBoardSize);
+        resetGame(nextBoardSize);
     }
 
     function handlePlaceStone(row: number, col: number) {
@@ -230,7 +277,6 @@ export default function GoBoard() {
         const nextMoves = [...moveHistory, nextMove];
 
         setMoveHistory(nextMoves);
-
         setWinner(gameWinner);
         setGameStatus("finished");
         setEndReason("resign");
@@ -250,44 +296,11 @@ export default function GoBoard() {
     }
 
     function handleReset() {
-        setBoard(createEmptyBoard());
-        setCurrentPlayer("black");
-        setMoveHistory([]);
-        setBlackCaptured(0);
-        setWhiteCaptured(0);
-        setMessage("Đen đi trước.");
-        setGameStatus("playing");
-        setWinner(null);
-        setConsecutivePasses(0);
-        setEndReason(null);
-        setShowGameEndPopup(false);
-        setErrorMessage(null);
-        setSelectedPoint(null);
-        setKoPreviousBoard(null);
+        resetGame();
     }
 
     function handleExitGameMode() {
         router.push("/");
-    }
-
-    function saveReviewData({
-        nextMoves,
-        gameWinner,
-        reason,
-    }: {
-        nextMoves: Move[];
-        gameWinner: Player | null;
-        reason: GameEndReason;
-    }) {
-        saveLatestGameReview({
-            board,
-            moves: nextMoves,
-            blackCaptured,
-            whiteCaptured,
-            winner: gameWinner,
-            endReason: reason,
-            createdAt: new Date().toISOString(),
-        });
     }
 
     function handleReviewGame() {
@@ -317,7 +330,9 @@ export default function GoBoard() {
             <div className="space-y-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                        <h2 className="text-2xl font-bold text-white">Bàn cờ 9x9</h2>
+                        <h2 className="text-2xl font-bold text-white">
+                            Bàn cờ {boardSize}x{boardSize}
+                        </h2>
 
                         <p className="text-neutral-400">
                             Trạng thái:{" "}
@@ -353,6 +368,27 @@ export default function GoBoard() {
                         </p>
 
                         <p className="mt-2 text-sm text-emerald-300">{message}</p>
+                    </div>
+
+                    <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
+                            Kích thước bàn
+                        </p>
+
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                            {SUPPORTED_BOARD_SIZES.map((size) => (
+                                <button
+                                    key={size}
+                                    onClick={() => handleBoardSizeChange(size)}
+                                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${boardSize === size
+                                        ? "border-amber-300 bg-amber-400 text-black"
+                                        : "border-white/20 text-white hover:bg-white/10"
+                                        }`}
+                                >
+                                    {size}x{size}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
                     <div className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm">
@@ -457,7 +493,9 @@ export default function GoBoard() {
                 />
 
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <h3 className="mb-3 font-semibold text-white">Lịch sử nước đi</h3>
+                    <h3 className="mb-3 font-semibold text-white">
+                        Lịch sử nước đi
+                    </h3>
 
                     {moveHistory.length === 0 ? (
                         <p className="text-sm text-neutral-500">
