@@ -6,9 +6,9 @@ import Link from "next/link";
 import GameReplay from "@/components/review/GameReplay";
 import MoveSuggestions from "@/components/review/MoveSuggestions";
 
+import type { FocusSuggestionPayload } from "@/components/review/MoveSuggestions";
 import type { SavedGameReview } from "@/lib/go/gameReviewStorage";
 import { readLatestGameReview } from "@/lib/go/gameReviewStorage";
-import type { Point } from "@/lib/go/types";
 
 function getPlayerLabel(player: "black" | "white") {
     return player === "black" ? "Đen" : "Trắng";
@@ -29,15 +29,15 @@ export default function LatestGameReview() {
     const replaySectionRef = useRef<HTMLDivElement | null>(null);
 
     const [review, setReview] = useState<SavedGameReview | null>(null);
-    const [focusedReviewPoint, setFocusedReviewPoint] =
-        useState<Point | null>(null);
+    const [focusedReviewSuggestion, setFocusedReviewSuggestion] =
+        useState<FocusSuggestionPayload | null>(null);
 
     useEffect(() => {
         setReview(readLatestGameReview());
     }, []);
 
-    function handleFocusSuggestion(point: Point) {
-        setFocusedReviewPoint(point);
+    function handleFocusSuggestion(payload: FocusSuggestionPayload) {
+        setFocusedReviewSuggestion(payload);
 
         window.setTimeout(() => {
             replaySectionRef.current?.scrollIntoView({
@@ -45,6 +45,10 @@ export default function LatestGameReview() {
                 block: "start",
             });
         }, 0);
+    }
+
+    function clearFocusedSuggestion() {
+        setFocusedReviewSuggestion(null);
     }
 
     if (!review) {
@@ -182,10 +186,12 @@ export default function LatestGameReview() {
                 </div>
             </section>
 
-            {focusedReviewPoint && (
+            {focusedReviewSuggestion && (
                 <div className="rounded-2xl border border-amber-300/20 bg-amber-400/10 px-5 py-3 text-sm text-amber-200">
-                    Đang highlight gợi ý tại hàng {focusedReviewPoint.row + 1}, cột{" "}
-                    {focusedReviewPoint.col + 1}. Bàn replay đã được cuộn lên phía trên.
+                    Đang xem thử gợi ý {focusedReviewSuggestion.label} cho{" "}
+                    {getPlayerLabel(focusedReviewSuggestion.player)} ở nước #
+                    {focusedReviewSuggestion.moveNumber}. Bàn replay đã được cuộn lên
+                    phía trên.
                 </div>
             )}
 
@@ -193,13 +199,23 @@ export default function LatestGameReview() {
                 <GameReplay
                     moves={review.moves}
                     boardSize={boardSize}
-                    focusedPoint={focusedReviewPoint}
+                    focusedPoint={focusedReviewSuggestion?.point ?? null}
+                    focusedLibertyPoints={
+                        focusedReviewSuggestion?.libertyPoints ?? []
+                    }
+                    focusedBoard={focusedReviewSuggestion?.board ?? null}
+                    focusedMoveNumber={
+                        focusedReviewSuggestion?.moveNumber ?? null
+                    }
+                    focusedLabel={focusedReviewSuggestion?.label ?? null}
+                    focusedReason={focusedReviewSuggestion?.reason ?? null}
+                    onClearFocus={clearFocusedSuggestion}
                 />
             </div>
 
             <MoveSuggestions
                 moves={review.moves}
-                onFocusPoint={handleFocusSuggestion}
+                onFocusSuggestion={handleFocusSuggestion}
             />
 
             <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">

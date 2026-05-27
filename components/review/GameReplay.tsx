@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import BoardGrid from "@/components/goban/BoardGrid";
 import { createEmptyBoard, placeStone } from "@/lib/go/board";
@@ -10,6 +10,12 @@ type GameReplayProps = {
     moves: Move[];
     boardSize: number;
     focusedPoint?: Point | null;
+    focusedLibertyPoints?: Point[];
+    focusedBoard?: Board | null;
+    focusedMoveNumber?: number | null;
+    focusedLabel?: string | null;
+    focusedReason?: string | null;
+    onClearFocus?: () => void;
 };
 
 type ReplayStep = {
@@ -24,6 +30,10 @@ function cloneBoard(board: Board): Board {
 
 function getPlayerLabel(player: "black" | "white") {
     return player === "black" ? "Đen" : "Trắng";
+}
+
+function getPointKey(point: Point) {
+    return `${point.row},${point.col}`;
 }
 
 function buildReplaySteps(moves: Move[], boardSize: number): ReplayStep[] {
@@ -92,6 +102,12 @@ export default function GameReplay({
     moves,
     boardSize,
     focusedPoint = null,
+    focusedLibertyPoints = [],
+    focusedBoard = null,
+    focusedMoveNumber = null,
+    focusedLabel = null,
+    focusedReason = null,
+    onClearFocus,
 }: GameReplayProps) {
     const replaySteps = useMemo(
         () => buildReplaySteps(moves, boardSize),
@@ -100,26 +116,59 @@ export default function GameReplay({
 
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
+    useEffect(() => {
+        if (!focusedMoveNumber) return;
+
+        const beforeSuggestedMoveIndex = Math.max(
+            0,
+            Math.min(focusedMoveNumber - 1, replaySteps.length - 1)
+        );
+
+        setCurrentStepIndex(beforeSuggestedMoveIndex);
+    }, [focusedMoveNumber, replaySteps.length]);
+
     const currentStep = replaySteps[currentStepIndex];
+    const displayBoard = focusedBoard ?? currentStep.board;
+
+    const focusedLibertyKeys = useMemo(
+        () => new Set(focusedLibertyPoints.map(getPointKey)),
+        [focusedLibertyPoints]
+    );
+
     const canGoPrevious = currentStepIndex > 0;
     const canGoNext = currentStepIndex < replaySteps.length - 1;
 
+    function clearFocusBeforeNavigation() {
+        if (focusedBoard) {
+            onClearFocus?.();
+        }
+    }
+
     function goPrevious() {
         if (!canGoPrevious) return;
+        clearFocusBeforeNavigation();
         setCurrentStepIndex((current) => current - 1);
     }
 
     function goNext() {
         if (!canGoNext) return;
+        clearFocusBeforeNavigation();
         setCurrentStepIndex((current) => current + 1);
     }
 
     function goToStart() {
+        clearFocusBeforeNavigation();
         setCurrentStepIndex(0);
     }
 
     function goToEnd() {
+        clearFocusBeforeNavigation();
         setCurrentStepIndex(replaySteps.length - 1);
+    }
+
+    function handleSliderChange(value: number) {
+        clearFocusBeforeNavigation();
+        setCurrentStepIndex(value);
     }
 
     return (
@@ -135,10 +184,28 @@ export default function GameReplay({
                     </p>
 
                     {focusedPoint && (
-                        <p className="mt-2 text-sm text-amber-300">
-                            Đang highlight gợi ý tại hàng {focusedPoint.row + 1},
-                            cột {focusedPoint.col + 1}.
-                        </p>
+                        <div className="mt-3 rounded-2xl border border-amber-300/20 bg-amber-400/10 p-4">
+                            <p className="text-sm font-semibold text-amber-200">
+                                Đang xem thử gợi ý: {focusedLabel}
+                            </p>
+
+                            <p className="mt-2 text-sm leading-6 text-neutral-300">
+                                {focusedReason}
+                            </p>
+
+                            <p className="mt-2 text-xs text-neutral-400">
+                                Ô vàng là nước được gợi ý. Chấm xanh là các khí của
+                                nhóm sau khi đi nước này.
+                            </p>
+
+                            <button
+                                type="button"
+                                onClick={onClearFocus}
+                                className="mt-3 rounded-full border border-amber-300/30 px-4 py-2 text-xs font-semibold text-amber-200 transition hover:bg-amber-400/10"
+                            >
+                                Trở về replay thật
+                            </button>
+                        </div>
                     )}
                 </div>
 
@@ -155,11 +222,12 @@ export default function GameReplay({
 
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
                 <BoardGrid
-                    board={currentStep.board}
+                    board={displayBoard}
                     onPointClick={() => { }}
                     isDisabled
                     ariaLabelPrefix="Replay point"
                     focusedPoint={focusedPoint}
+                    highlightedLibertyKeys={focusedLibertyKeys}
                     showCoordinates
                 />
 
@@ -170,7 +238,9 @@ export default function GameReplay({
                         </p>
 
                         <p className="mt-2 text-sm leading-6 text-neutral-300">
-                            {currentStep.label}
+                            {focusedBoard
+                                ? "Đang hiển thị bàn cờ giả lập từ nước gợi ý."
+                                : currentStep.label}
                         </p>
                     </div>
 
@@ -180,7 +250,7 @@ export default function GameReplay({
                         max={replaySteps.length - 1}
                         value={currentStepIndex}
                         onChange={(event) =>
-                            setCurrentStepIndex(Number(event.target.value))
+                            handleSliderChange(Number(event.target.value))
                         }
                         className="w-full"
                     />

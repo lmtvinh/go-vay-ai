@@ -14,6 +14,8 @@ export type SuggestedMove = {
     score: number;
     capturedCount: number;
     liberties: number;
+    libertyPoints: Point[];
+    boardAfter: Board;
     reason: string;
 };
 
@@ -46,6 +48,7 @@ function getPointKey(point: Point) {
 
 function getAllGroups(board: Board, player: Player) {
     const visited = new Set<string>();
+
     const groups: Array<{
         group: Point[];
         liberties: Point[];
@@ -133,6 +136,8 @@ function scoreMove(
         score,
         capturedCount,
         liberties,
+        libertyPoints: analysis.liberties,
+        boardAfter: cloneBoard(result.board),
         reason,
     };
 }
@@ -210,14 +215,19 @@ export function getBasicMoveSuggestions(moves: Move[]) {
 
         const candidates = getCandidateMoves(boardBeforeMove, move.player);
 
-        const bestCandidates = candidates.slice(0, 3);
-        const bestMove = bestCandidates[0];
+        const suggestedCandidates = candidates
+            .filter(
+                (candidate) =>
+                    candidate.row !== move.row || candidate.col !== move.col
+            )
+            .slice(0, 3);
+
+        const bestMove = suggestedCandidates[0];
 
         if (actualMoveScore && bestMove) {
-            const isSameMove = bestMove.row === move.row && bestMove.col === move.col;
             const scoreGap = bestMove.score - actualMoveScore.score;
 
-            if (!isSameMove && scoreGap >= 25) {
+            if (scoreGap >= 25) {
                 const suggestionText = getSuggestionText({
                     bestMove,
                     actualMove: actualMoveScore,
@@ -235,7 +245,7 @@ export function getBasicMoveSuggestions(moves: Move[]) {
                     title: suggestionText.title,
                     description: suggestionText.description,
                     severity: suggestionText.severity,
-                    suggestedMoves: bestCandidates,
+                    suggestedMoves: suggestedCandidates,
                 });
             }
         }
@@ -247,5 +257,5 @@ export function getBasicMoveSuggestions(moves: Move[]) {
         }
     }
 
-    return suggestions.slice(0, 8);
+    return suggestions.slice(0, 12);
 }

@@ -2,14 +2,24 @@
 
 import { useMemo, useState } from "react";
 
-import type { Move, Player, Point } from "@/lib/go/types";
+import type { Board, Move, Player, Point } from "@/lib/go/types";
 import { getBasicMoveSuggestions } from "@/lib/go/reviewSuggestions";
 
 type PlayerFilter = "all" | Player;
 
+export type FocusSuggestionPayload = {
+    point: Point;
+    libertyPoints: Point[];
+    board: Board;
+    moveNumber: number;
+    player: Player;
+    label: string;
+    reason: string;
+};
+
 type MoveSuggestionsProps = {
     moves: Move[];
-    onFocusPoint?: (point: Point) => void;
+    onFocusSuggestion?: (payload: FocusSuggestionPayload) => void;
 };
 
 function getPlayerLabel(player: Player) {
@@ -35,7 +45,7 @@ function getSeverityClassName(severity: "low" | "medium" | "high") {
 
 export default function MoveSuggestions({
     moves,
-    onFocusPoint,
+    onFocusSuggestion,
 }: MoveSuggestionsProps) {
     const [playerFilter, setPlayerFilter] = useState<PlayerFilter>("all");
 
@@ -176,9 +186,17 @@ export default function MoveSuggestions({
                                         key={`${suggestion.moveNumber}-${move.row}-${move.col}`}
                                         type="button"
                                         onClick={() =>
-                                            onFocusPoint?.({
-                                                row: move.row,
-                                                col: move.col,
+                                            onFocusSuggestion?.({
+                                                point: {
+                                                    row: move.row,
+                                                    col: move.col,
+                                                },
+                                                libertyPoints: move.libertyPoints,
+                                                board: move.boardAfter,
+                                                moveNumber: suggestion.moveNumber,
+                                                player: suggestion.player,
+                                                label: move.label,
+                                                reason: move.reason,
                                             })
                                         }
                                         className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left transition hover:border-amber-300/40 hover:bg-white/[0.06]"
@@ -195,8 +213,13 @@ export default function MoveSuggestions({
                                             {move.reason}
                                         </p>
 
+                                        <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-neutral-500">
+                                            <span>Khí: {move.liberties}</span>
+                                            <span>Bắt: {move.capturedCount}</span>
+                                        </div>
+
                                         <p className="mt-3 text-xs text-neutral-500">
-                                            Click để highlight trên bàn replay.
+                                            Click để xem thử nước này trên bàn replay.
                                         </p>
                                     </button>
                                 ))}
