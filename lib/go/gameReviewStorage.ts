@@ -7,9 +7,12 @@ import type {
     Player,
 } from "@/lib/go/types";
 
+
+
 const STORAGE_KEY = "go-vay-ai:latest-game-review";
 
 export type SavedGameReview = {
+    boardSize: number;
     board: Board;
     moves: Move[];
     blackCaptured: number;
