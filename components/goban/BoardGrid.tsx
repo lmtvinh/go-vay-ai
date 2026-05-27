@@ -1,6 +1,6 @@
 "use client";
 
-import type { Board } from "@/lib/go/types";
+import type { Board, Player } from "@/lib/go/types";
 
 type BoardGridProps = {
     board: Board;
@@ -10,6 +10,7 @@ type BoardGridProps = {
     isDisabled?: boolean;
     ariaLabelPrefix?: string;
     showCoordinates?: boolean;
+    previewPlayer?: Player | null;
 };
 
 const BOARD_INSET_PERCENT = 12;
@@ -23,6 +24,7 @@ export default function BoardGrid({
     isDisabled = false,
     ariaLabelPrefix = "Board point",
     showCoordinates = true,
+    previewPlayer = null,
 }: BoardGridProps) {
     const size = board.length;
 
@@ -150,7 +152,7 @@ export default function BoardGrid({
                             <button
                                 key={`${rowIndex}-${colIndex}`}
                                 onClick={() => onPointClick(rowIndex, colIndex)}
-                                className={`absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full ${isDisabled ? "cursor-not-allowed" : ""
+                                className={`group absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full ${isDisabled ? "cursor-not-allowed" : ""
                                     }`}
                                 style={{
                                     left: `${getBoardPositionPercent(colIndex)}%`,
@@ -170,6 +172,15 @@ export default function BoardGrid({
                             >
                                 {isLibertyHighlighted && !stone && (
                                     <span className="h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_16px_rgba(52,211,153,0.9)]" />
+                                )}
+
+                                {previewPlayer && !stone && !isDisabled && (
+                                    <span
+                                        className={`pointer-events-none hidden h-full w-full rounded-full opacity-40 shadow-lg group-hover:block ${previewPlayer === "black"
+                                            ? "bg-neutral-950"
+                                            : "border border-neutral-300 bg-white"
+                                            }`}
+                                    />
                                 )}
 
                                 {stone && (
