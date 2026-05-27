@@ -4,10 +4,11 @@ import { useMemo, useState } from "react";
 
 import BoardGrid from "@/components/goban/BoardGrid";
 import { createEmptyBoard, placeStone } from "@/lib/go/board";
-import type { Board, Move } from "@/lib/go/types";
+import type { Board, Move, Point } from "@/lib/go/types";
 
 type GameReplayProps = {
     moves: Move[];
+    focusedPoint?: Point | null;
 };
 
 type ReplayStep = {
@@ -86,7 +87,7 @@ function buildReplaySteps(moves: Move[]): ReplayStep[] {
     return steps;
 }
 
-export default function GameReplay({ moves }: GameReplayProps) {
+export default function GameReplay({ moves, focusedPoint = null, }: GameReplayProps) {
     const replaySteps = useMemo(() => buildReplaySteps(moves), [moves]);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
@@ -136,6 +137,7 @@ export default function GameReplay({ moves }: GameReplayProps) {
                     onPointClick={() => { }}
                     isDisabled
                     ariaLabelPrefix="Replay point"
+                    focusedPoint={focusedPoint}
                 />
 
                 <aside className="space-y-4 rounded-3xl border border-white/10 bg-black/20 p-5">
