@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import type { SavedGameReview } from "@/lib/go/gameReviewStorage";
 import { readLatestGameReview } from "@/lib/go/gameReviewStorage";
+import GameReplay from "@/components/review/GameReplay";
 
 function getPlayerLabel(player: "black" | "white") {
     return player === "black" ? "Đen" : "Trắng";
@@ -128,6 +129,8 @@ export default function LatestGameReview() {
                     </p>
                 </div>
             </section>
+
+            <GameReplay moves={review.moves} />
 
             <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
                 <h2 className="text-2xl font-bold text-white">Nhận xét cơ bản</h2>
