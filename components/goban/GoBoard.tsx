@@ -59,6 +59,7 @@ export default function GoBoard() {
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [koPreviousBoard, setKoPreviousBoard] = useState<Board | null>(null);
     const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
+    const [lastMovePoint, setLastMovePoint] = useState<Point | null>(null);
 
     const selectedAnalysis = selectedPoint
         ? getStoneGroupAnalysis(board, selectedPoint.row, selectedPoint.col)
@@ -112,6 +113,7 @@ export default function GoBoard() {
         setShowGameEndPopup(false);
         setErrorMessage(null);
         setSelectedPoint(null);
+        setLastMovePoint(null);
         setKoPreviousBoard(null);
     }
 
@@ -129,8 +131,9 @@ export default function GoBoard() {
         if (board[row][col] !== null) {
             const analysis = getStoneGroupAnalysis(board, row, col);
 
-            setSelectedPoint({ row, col });
             setErrorMessage(null);
+            setSelectedPoint({ row, col });
+            setLastMovePoint({ row, col });
 
             if (analysis) {
                 const libertyCount = analysis.liberties.length;
@@ -216,6 +219,7 @@ export default function GoBoard() {
 
         setSelectedPoint(null);
         setKoPreviousBoard(null);
+        setLastMovePoint(null);
 
         const nextMove: Move = {
             type: "pass",
@@ -281,6 +285,7 @@ export default function GoBoard() {
         setGameStatus("finished");
         setEndReason("resign");
         setShowGameEndPopup(true);
+        setLastMovePoint(null);
 
         saveReviewData({
             nextMoves,
@@ -491,6 +496,7 @@ export default function GoBoard() {
                     isDisabled={gameStatus === "finished"}
                     ariaLabelPrefix="Place stone at"
                     previewPlayer={currentPlayer}
+                    lastMovePoint={lastMovePoint}
                 />
 
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4">

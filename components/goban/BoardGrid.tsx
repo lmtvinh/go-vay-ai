@@ -1,6 +1,6 @@
 "use client";
 
-import type { Board, Player } from "@/lib/go/types";
+import type { Board, Player, Point } from "@/lib/go/types";
 
 type BoardGridProps = {
     board: Board;
@@ -11,6 +11,7 @@ type BoardGridProps = {
     ariaLabelPrefix?: string;
     showCoordinates?: boolean;
     previewPlayer?: Player | null;
+    lastMovePoint?: Point | null;
 };
 
 const BOARD_INSET_PERCENT = 12;
@@ -25,6 +26,7 @@ export default function BoardGrid({
     ariaLabelPrefix = "Board point",
     showCoordinates = true,
     previewPlayer = null,
+    lastMovePoint = null,
 }: BoardGridProps) {
     const size = board.length;
 
@@ -147,6 +149,8 @@ export default function BoardGrid({
                             highlightedGroupKeys.has(pointKey);
                         const isLibertyHighlighted =
                             highlightedLibertyKeys.has(pointKey);
+                        const isLastMove =
+                            lastMovePoint?.row === rowIndex && lastMovePoint?.col === colIndex;
 
                         return (
                             <button
@@ -185,14 +189,21 @@ export default function BoardGrid({
 
                                 {stone && (
                                     <span
-                                        className={`block h-full w-full rounded-full shadow-lg ring-offset-2 ring-offset-[#d8a850] ${stone === "black"
+                                        className={`relative block h-full w-full rounded-full shadow-lg ring-offset-2 ring-offset-[#d8a850] ${stone === "black"
                                             ? "bg-neutral-950"
                                             : "border border-neutral-300 bg-white"
                                             } ${isGroupHighlighted
                                                 ? "ring-4 ring-emerald-400"
                                                 : ""
                                             }`}
-                                    />
+                                    >
+                                        {isLastMove && (
+                                            <span
+                                                className={`absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ${stone === "black" ? "bg-white" : "bg-neutral-950"
+                                                    }`}
+                                            />
+                                        )}
+                                    </span>
                                 )}
                             </button>
                         );
