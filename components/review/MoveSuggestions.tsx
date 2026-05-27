@@ -62,22 +62,22 @@ export default function MoveSuggestions({
         label: string;
         count: number;
     }> = [
-        {
-            value: "all",
-            label: "Tất cả",
-            count: allSuggestions.length,
-        },
-        {
-            value: "black",
-            label: "Đen",
-            count: blackSuggestionCount,
-        },
-        {
-            value: "white",
-            label: "Trắng",
-            count: whiteSuggestionCount,
-        },
-    ];
+            {
+                value: "all",
+                label: "Tất cả",
+                count: allSuggestions.length,
+            },
+            {
+                value: "black",
+                label: "Đen",
+                count: blackSuggestionCount,
+            },
+            {
+                value: "white",
+                label: "Trắng",
+                count: whiteSuggestionCount,
+            },
+        ];
 
     return (
         <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
@@ -104,11 +104,10 @@ export default function MoveSuggestions({
                         key={option.value}
                         type="button"
                         onClick={() => setPlayerFilter(option.value)}
-                        className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                            playerFilter === option.value
-                                ? "border-amber-300 bg-amber-400 text-black"
-                                : "border-white/20 text-white hover:bg-white/10"
-                        }`}
+                        className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${playerFilter === option.value
+                            ? "border-amber-300 bg-amber-400 text-black"
+                            : "border-white/20 text-white hover:bg-white/10"
+                            }`}
                     >
                         {option.label} ({option.count})
                     </button>
@@ -126,9 +125,10 @@ export default function MoveSuggestions({
                     </p>
 
                     <p className="mt-2 text-xs leading-5 text-neutral-500">
-                        Điều này không có nghĩa là người chơi đã đi hoàn hảo. Bản hiện tại
-                        mới dùng heuristic cơ bản như bắt quân, số khí và độ an toàn của
-                        nhóm. Sau này khi tích hợp KataGo, phần này sẽ chính xác hơn nhiều.
+                        Điều này không có nghĩa là người chơi đã đi hoàn hảo. Bản hiện
+                        tại mới dùng phân tích cơ bản như bắt quân, số khí và độ an toàn
+                        của nhóm. Sau này khi tích hợp engine mạnh hơn, phần này sẽ chính
+                        xác hơn nhiều.
                     </p>
                 </div>
             ) : (
