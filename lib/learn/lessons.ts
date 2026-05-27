@@ -50,7 +50,7 @@ export const lessons: Lesson[] = [
         description:
             "Hiểu cách kết thúc ván cờ và ước lượng ai đang dẫn điểm.",
         href: "/learn/scoring",
-        status: "coming-soon",
+        status: "available",
     },
 ];
 
