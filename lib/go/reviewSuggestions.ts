@@ -217,7 +217,7 @@ export function getBasicMoveSuggestions(moves: Move[]) {
             const isSameMove = bestMove.row === move.row && bestMove.col === move.col;
             const scoreGap = bestMove.score - actualMoveScore.score;
 
-            if (!isSameMove && scoreGap >= 45) {
+            if (!isSameMove && scoreGap >= 25) {
                 const suggestionText = getSuggestionText({
                     bestMove,
                     actualMove: actualMoveScore,
