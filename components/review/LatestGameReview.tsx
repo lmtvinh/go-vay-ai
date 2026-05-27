@@ -170,21 +170,62 @@ export default function LatestGameReview() {
                 </div>
             </section>
 
-            <section className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
-                    <p className="text-sm text-neutral-500">Nước bắt quân</p>
-                    <p className="mt-2 text-3xl font-bold text-emerald-300">
-                        {captureMoves.length}
-                    </p>
-                </div>
+            {review.score && (
+                <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <h2 className="text-2xl font-bold text-white">
+                                Điểm cơ bản
+                            </h2>
 
-                <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
-                    <p className="text-sm text-neutral-500">Pass</p>
-                    <p className="mt-2 text-3xl font-bold text-white">
-                        {passMoves.length}
-                    </p>
-                </div>
-            </section>
+                            <p className="mt-2 text-sm leading-6 text-neutral-400">
+                                Đây là cách tính đơn giản để người mới hiểu ván cờ. Điểm gồm
+                                quân còn trên bàn, vùng đất được bao quanh và số quân đã bắt.
+                            </p>
+                        </div>
+
+                        <div className="rounded-full bg-amber-400 px-5 py-2 text-sm font-bold text-black">
+                            {review.score.winner
+                                ? `${getPlayerLabel(review.score.winner)} thắng ${review.score.margin} điểm`
+                                : "Hòa"}
+                        </div>
+                    </div>
+
+                    <div className="mt-5 grid gap-4 md:grid-cols-2">
+                        <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                            <h3 className="font-bold text-white">Đen</h3>
+
+                            <div className="mt-3 space-y-2 text-sm text-neutral-300">
+                                <p>Quân trên bàn: {review.score.blackStones}</p>
+                                <p>Đất: {review.score.blackTerritory}</p>
+                                <p>Quân đã bắt: {review.score.blackCaptured}</p>
+                                <p className="pt-2 text-lg font-bold text-amber-300">
+                                    Tổng: {review.score.blackTotal}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                            <h3 className="font-bold text-white">Trắng</h3>
+
+                            <div className="mt-3 space-y-2 text-sm text-neutral-300">
+                                <p>Quân trên bàn: {review.score.whiteStones}</p>
+                                <p>Đất: {review.score.whiteTerritory}</p>
+                                <p>Quân đã bắt: {review.score.whiteCaptured}</p>
+                                <p className="pt-2 text-lg font-bold text-amber-300">
+                                    Tổng: {review.score.whiteTotal}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {review.score.neutralTerritory > 0 && (
+                        <p className="mt-4 text-sm text-neutral-500">
+                            Vùng trung lập/chưa rõ: {review.score.neutralTerritory} điểm.
+                        </p>
+                    )}
+                </section>
+            )}
 
             {focusedReviewSuggestion && (
                 <div className="rounded-2xl border border-amber-300/20 bg-amber-400/10 px-5 py-3 text-sm text-amber-200">

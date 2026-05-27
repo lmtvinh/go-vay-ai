@@ -6,11 +6,9 @@ import type {
     Move,
     Player,
 } from "@/lib/go/types";
-
-
+import type { BasicScoreResult } from "@/lib/go/scoring";
 
 const STORAGE_KEY = "go-vay-ai:latest-game-review";
-
 export type SavedGameReview = {
     boardSize: number;
     board: Board;
@@ -20,6 +18,7 @@ export type SavedGameReview = {
     winner: Player | null;
     endReason: GameEndReason;
     createdAt: string;
+    score?: BasicScoreResult;
 };
 
 export function saveLatestGameReview(review: SavedGameReview) {
