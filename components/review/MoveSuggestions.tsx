@@ -1,17 +1,24 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
-import type { Move, Point } from "@/lib/go/types";
+import type { Move, Player, Point } from "@/lib/go/types";
 import { getBasicMoveSuggestions } from "@/lib/go/reviewSuggestions";
+
+type PlayerFilter = "all" | Player;
 
 type MoveSuggestionsProps = {
     moves: Move[];
     onFocusPoint?: (point: Point) => void;
 };
 
-function getPlayerLabel(player: "black" | "white") {
+function getPlayerLabel(player: Player) {
     return player === "black" ? "Đen" : "Trắng";
+}
+
+function getFilterLabel(filter: PlayerFilter) {
+    if (filter === "all") return "Tất cả";
+    return getPlayerLabel(filter);
 }
 
 function getSeverityLabel(severity: "low" | "medium" | "high") {
@@ -26,8 +33,51 @@ function getSeverityClassName(severity: "low" | "medium" | "high") {
     return "bg-emerald-400/10 text-emerald-300";
 }
 
-export default function MoveSuggestions({ moves, onFocusPoint }: MoveSuggestionsProps) {
-    const suggestions = useMemo(() => getBasicMoveSuggestions(moves), [moves]);
+export default function MoveSuggestions({
+    moves,
+    onFocusPoint,
+}: MoveSuggestionsProps) {
+    const [playerFilter, setPlayerFilter] = useState<PlayerFilter>("all");
+
+    const allSuggestions = useMemo(() => getBasicMoveSuggestions(moves), [moves]);
+
+    const filteredSuggestions = useMemo(() => {
+        if (playerFilter === "all") return allSuggestions;
+
+        return allSuggestions.filter(
+            (suggestion) => suggestion.player === playerFilter
+        );
+    }, [allSuggestions, playerFilter]);
+
+    const blackSuggestionCount = allSuggestions.filter(
+        (suggestion) => suggestion.player === "black"
+    ).length;
+
+    const whiteSuggestionCount = allSuggestions.filter(
+        (suggestion) => suggestion.player === "white"
+    ).length;
+
+    const filterOptions: Array<{
+        value: PlayerFilter;
+        label: string;
+        count: number;
+    }> = [
+        {
+            value: "all",
+            label: "Tất cả",
+            count: allSuggestions.length,
+        },
+        {
+            value: "black",
+            label: "Đen",
+            count: blackSuggestionCount,
+        },
+        {
+            value: "white",
+            label: "Trắng",
+            count: whiteSuggestionCount,
+        },
+    ];
 
     return (
         <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
@@ -38,29 +88,54 @@ export default function MoveSuggestions({ moves, onFocusPoint }: MoveSuggestions
                     </h2>
 
                     <p className="mt-2 text-sm leading-6 text-neutral-400">
-                        Đây là phân tích cơ bản dựa trên bắt quân, số khí và mức độ
-                        an toàn của nhóm quân. Bản AI mạnh hơn sẽ được tích hợp sau.
+                        Review này phân tích nước đi của cả Đen và Trắng. Bạn có thể
+                        lọc theo từng người chơi để xem bên nào cần cải thiện nước nào.
                     </p>
                 </div>
 
                 <span className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-neutral-300">
-                    {suggestions.length} gợi ý
+                    {filteredSuggestions.length} gợi ý
                 </span>
             </div>
 
-            {suggestions.length === 0 ? (
+            <div className="mt-5 flex flex-wrap gap-2">
+                {filterOptions.map((option) => (
+                    <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setPlayerFilter(option.value)}
+                        className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                            playerFilter === option.value
+                                ? "border-amber-300 bg-amber-400 text-black"
+                                : "border-white/20 text-white hover:bg-white/10"
+                        }`}
+                    >
+                        {option.label} ({option.count})
+                    </button>
+                ))}
+            </div>
+
+            {filteredSuggestions.length === 0 ? (
                 <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-5">
                     <p className="text-sm leading-6 text-neutral-300">
-                        Chưa phát hiện nước đi nào có thể cải thiện rõ ràng trong bản
-                        phân tích cơ bản. Hãy chơi thêm nhiều ván để hệ thống có dữ liệu
-                        tốt hơn.
+                        Chưa phát hiện gợi ý rõ ràng cho{" "}
+                        <span className="font-semibold text-amber-300">
+                            {getFilterLabel(playerFilter)}
+                        </span>{" "}
+                        trong bản phân tích cơ bản này.
+                    </p>
+
+                    <p className="mt-2 text-xs leading-5 text-neutral-500">
+                        Điều này không có nghĩa là người chơi đã đi hoàn hảo. Bản hiện tại
+                        mới dùng heuristic cơ bản như bắt quân, số khí và độ an toàn của
+                        nhóm. Sau này khi tích hợp KataGo, phần này sẽ chính xác hơn nhiều.
                     </p>
                 </div>
             ) : (
                 <div className="mt-5 space-y-4">
-                    {suggestions.map((suggestion) => (
+                    {filteredSuggestions.map((suggestion) => (
                         <article
-                            key={suggestion.moveNumber}
+                            key={`${suggestion.moveNumber}-${suggestion.player}`}
                             className="rounded-2xl border border-white/10 bg-black/20 p-5"
                         >
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -98,7 +173,7 @@ export default function MoveSuggestions({ moves, onFocusPoint }: MoveSuggestions
                             <div className="mt-4 grid gap-3 md:grid-cols-3">
                                 {suggestion.suggestedMoves.map((move, index) => (
                                     <button
-                                        key={`${move.row}-${move.col}`}
+                                        key={`${suggestion.moveNumber}-${move.row}-${move.col}`}
                                         type="button"
                                         onClick={() =>
                                             onFocusPoint?.({
@@ -118,6 +193,10 @@ export default function MoveSuggestions({ moves, onFocusPoint }: MoveSuggestions
 
                                         <p className="mt-2 text-xs leading-5 text-neutral-400">
                                             {move.reason}
+                                        </p>
+
+                                        <p className="mt-3 text-xs text-neutral-500">
+                                            Click để highlight trên bàn replay.
                                         </p>
                                     </button>
                                 ))}
