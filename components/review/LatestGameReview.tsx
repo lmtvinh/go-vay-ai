@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+
+import GameReplay from "@/components/review/GameReplay";
+import MoveSuggestions from "@/components/review/MoveSuggestions";
 
 import type { SavedGameReview } from "@/lib/go/gameReviewStorage";
 import { readLatestGameReview } from "@/lib/go/gameReviewStorage";
-import GameReplay from "@/components/review/GameReplay";
-import MoveSuggestions from "@/components/review/MoveSuggestions";
 import type { Point } from "@/lib/go/types";
 
 function getPlayerLabel(player: "black" | "white") {
@@ -20,13 +21,31 @@ function getEndReasonLabel(reason: SavedGameReview["endReason"]) {
     return "Hoàn thành";
 }
 
+function getReviewBoardSize(review: SavedGameReview) {
+    return review.boardSize ?? review.board.length;
+}
+
 export default function LatestGameReview() {
+    const replaySectionRef = useRef<HTMLDivElement | null>(null);
+
     const [review, setReview] = useState<SavedGameReview | null>(null);
-    const [focusedReviewPoint, setFocusedReviewPoint] = useState<Point | null>(null);
+    const [focusedReviewPoint, setFocusedReviewPoint] =
+        useState<Point | null>(null);
 
     useEffect(() => {
         setReview(readLatestGameReview());
     }, []);
+
+    function handleFocusSuggestion(point: Point) {
+        setFocusedReviewPoint(point);
+
+        window.setTimeout(() => {
+            replaySectionRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+            });
+        }, 0);
+    }
 
     if (!review) {
         return (
@@ -49,8 +68,14 @@ export default function LatestGameReview() {
         );
     }
 
+    const boardSize = getReviewBoardSize(review);
+
     const stoneMoves = review.moves.filter((move) => move.type === "stone");
     const passMoves = review.moves.filter((move) => move.type === "pass");
+
+    const blackMoves = stoneMoves.filter((move) => move.player === "black");
+    const whiteMoves = stoneMoves.filter((move) => move.player === "white");
+
     const captureMoves = review.moves.filter(
         (move) => move.type === "stone" && move.captured.length > 0
     );
@@ -68,7 +93,8 @@ export default function LatestGameReview() {
                     </h1>
 
                     <p className="mt-3 text-neutral-400">
-                        Đây là bản review cơ bản dựa trên lịch sử nước đi.
+                        Đây là bản review cơ bản dựa trên lịch sử nước đi. Với PvP,
+                        phần gợi ý có thể xem theo cả hai bên: Tất cả, Đen hoặc Trắng.
                     </p>
                 </div>
 
@@ -103,14 +129,14 @@ export default function LatestGameReview() {
                 </div>
 
                 <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
-                    <p className="text-sm text-neutral-500">Nước bắt quân</p>
+                    <p className="text-sm text-neutral-500">Kích thước bàn</p>
                     <p className="mt-2 text-2xl font-bold text-emerald-300">
-                        {captureMoves.length}
+                        {boardSize}x{boardSize}
                     </p>
                 </div>
             </section>
 
-            <section className="grid gap-4 md:grid-cols-3">
+            <section className="grid gap-4 md:grid-cols-4">
                 <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
                     <p className="text-sm text-neutral-500">Đen đã bắt</p>
                     <p className="mt-2 text-3xl font-bold text-white">
@@ -126,6 +152,29 @@ export default function LatestGameReview() {
                 </div>
 
                 <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
+                    <p className="text-sm text-neutral-500">Nước Đen</p>
+                    <p className="mt-2 text-3xl font-bold text-white">
+                        {blackMoves.length}
+                    </p>
+                </div>
+
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
+                    <p className="text-sm text-neutral-500">Nước Trắng</p>
+                    <p className="mt-2 text-3xl font-bold text-white">
+                        {whiteMoves.length}
+                    </p>
+                </div>
+            </section>
+
+            <section className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
+                    <p className="text-sm text-neutral-500">Nước bắt quân</p>
+                    <p className="mt-2 text-3xl font-bold text-emerald-300">
+                        {captureMoves.length}
+                    </p>
+                </div>
+
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
                     <p className="text-sm text-neutral-500">Pass</p>
                     <p className="mt-2 text-3xl font-bold text-white">
                         {passMoves.length}
@@ -136,20 +185,21 @@ export default function LatestGameReview() {
             {focusedReviewPoint && (
                 <div className="rounded-2xl border border-amber-300/20 bg-amber-400/10 px-5 py-3 text-sm text-amber-200">
                     Đang highlight gợi ý tại hàng {focusedReviewPoint.row + 1}, cột{" "}
-                    {focusedReviewPoint.col + 1}.
+                    {focusedReviewPoint.col + 1}. Bàn replay đã được cuộn lên phía trên.
                 </div>
             )}
 
-            <GameReplay
-                moves={review.moves}
-                focusedPoint={focusedReviewPoint}
-            />
+            <div ref={replaySectionRef}>
+                <GameReplay
+                    moves={review.moves}
+                    boardSize={boardSize}
+                    focusedPoint={focusedReviewPoint}
+                />
+            </div>
 
             <MoveSuggestions
                 moves={review.moves}
-                onFocusPoint={(point) => {
-                    setFocusedReviewPoint(point);
-                }}
+                onFocusPoint={handleFocusSuggestion}
             />
 
             <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">

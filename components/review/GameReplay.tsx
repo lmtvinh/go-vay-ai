@@ -8,6 +8,7 @@ import type { Board, Move, Point } from "@/lib/go/types";
 
 type GameReplayProps = {
     moves: Move[];
+    boardSize: number;
     focusedPoint?: Point | null;
 };
 
@@ -25,8 +26,8 @@ function getPlayerLabel(player: "black" | "white") {
     return player === "black" ? "Đen" : "Trắng";
 }
 
-function buildReplaySteps(moves: Move[]): ReplayStep[] {
-    let currentBoard = createEmptyBoard();
+function buildReplaySteps(moves: Move[], boardSize: number): ReplayStep[] {
+    let currentBoard = createEmptyBoard(boardSize);
 
     const steps: ReplayStep[] = [
         {
@@ -87,8 +88,16 @@ function buildReplaySteps(moves: Move[]): ReplayStep[] {
     return steps;
 }
 
-export default function GameReplay({ moves, focusedPoint = null, }: GameReplayProps) {
-    const replaySteps = useMemo(() => buildReplaySteps(moves), [moves]);
+export default function GameReplay({
+    moves,
+    boardSize,
+    focusedPoint = null,
+}: GameReplayProps) {
+    const replaySteps = useMemo(
+        () => buildReplaySteps(moves, boardSize),
+        [moves, boardSize]
+    );
+
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
     const currentStep = replaySteps[currentStepIndex];
@@ -124,10 +133,23 @@ export default function GameReplay({ moves, focusedPoint = null, }: GameReplayPr
                     <p className="mt-2 text-sm leading-6 text-neutral-400">
                         Xem lại ván cờ từng bước để hiểu diễn biến của trận đấu.
                     </p>
+
+                    {focusedPoint && (
+                        <p className="mt-2 text-sm text-amber-300">
+                            Đang highlight gợi ý tại hàng {focusedPoint.row + 1},
+                            cột {focusedPoint.col + 1}.
+                        </p>
+                    )}
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-neutral-300">
-                    Nước {currentStepIndex} / {replaySteps.length - 1}
+                <div className="space-y-2 text-sm">
+                    <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-neutral-300">
+                        Nước {currentStepIndex} / {replaySteps.length - 1}
+                    </div>
+
+                    <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-neutral-300">
+                        Bàn {boardSize}x{boardSize}
+                    </div>
                 </div>
             </div>
 
@@ -138,6 +160,7 @@ export default function GameReplay({ moves, focusedPoint = null, }: GameReplayPr
                     isDisabled
                     ariaLabelPrefix="Replay point"
                     focusedPoint={focusedPoint}
+                    showCoordinates
                 />
 
                 <aside className="space-y-4 rounded-3xl border border-white/10 bg-black/20 p-5">
@@ -164,6 +187,7 @@ export default function GameReplay({ moves, focusedPoint = null, }: GameReplayPr
 
                     <div className="grid grid-cols-2 gap-3">
                         <button
+                            type="button"
                             onClick={goToStart}
                             disabled={!canGoPrevious}
                             className="rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
@@ -172,6 +196,7 @@ export default function GameReplay({ moves, focusedPoint = null, }: GameReplayPr
                         </button>
 
                         <button
+                            type="button"
                             onClick={goToEnd}
                             disabled={!canGoNext}
                             className="rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
@@ -180,6 +205,7 @@ export default function GameReplay({ moves, focusedPoint = null, }: GameReplayPr
                         </button>
 
                         <button
+                            type="button"
                             onClick={goPrevious}
                             disabled={!canGoPrevious}
                             className="rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
@@ -188,6 +214,7 @@ export default function GameReplay({ moves, focusedPoint = null, }: GameReplayPr
                         </button>
 
                         <button
+                            type="button"
                             onClick={goNext}
                             disabled={!canGoNext}
                             className="rounded-full bg-amber-400 px-4 py-2 text-sm font-semibold text-black transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-40"
