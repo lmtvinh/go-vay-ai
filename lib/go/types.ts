@@ -38,8 +38,8 @@ export type GameStatus = "playing" | "finished";
 export type GameMode =
   | "pvp-local"
   | "pvp-online"
-  | "human-bot"
-  | "human-ai-coach"
+  | "human-vs-bot"
+  | "human-ai"
   | "tutorial"
   | "lesson";
 
