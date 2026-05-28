@@ -152,15 +152,20 @@ export default function GameReviewList() {
 
                         <div className="mt-5 flex flex-wrap gap-3">
                             <Link
-                                href="/review/latest"
+                                href={`/review/${review.id}`}
                                 className="rounded-full bg-amber-400 px-5 py-2 text-sm font-semibold text-black transition hover:bg-amber-300"
                             >
-                                Xem latest
+                                Xem chi tiết
                             </Link>
 
-                            <span className="rounded-full border border-white/10 px-5 py-2 text-sm text-neutral-500">
-                                Chi tiết theo ID sẽ làm ở bước tiếp theo
-                            </span>
+                            {index === 0 && (
+                                <Link
+                                    href="/review/latest"
+                                    className="rounded-full border border-white/20 px-5 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+                                >
+                                    Xem latest
+                                </Link>
+                            )}
                         </div>
                     </article>
                 ))}
