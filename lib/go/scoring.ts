@@ -5,13 +5,21 @@ type TerritoryOwner = Player | "neutral";
 export type BasicScoreResult = {
     blackStones: number;
     whiteStones: number;
+
     blackTerritory: number;
     whiteTerritory: number;
     neutralTerritory: number;
+
+    blackTerritoryPoints: Point[];
+    whiteTerritoryPoints: Point[];
+    neutralTerritoryPoints: Point[];
+
     blackCaptured: number;
     whiteCaptured: number;
+
     blackTotal: number;
     whiteTotal: number;
+
     winner: Player | null;
     margin: number;
 };
@@ -94,9 +102,14 @@ export function calculateBasicScore(
 ): BasicScoreResult {
     let blackStones = 0;
     let whiteStones = 0;
+
     let blackTerritory = 0;
     let whiteTerritory = 0;
     let neutralTerritory = 0;
+
+    const blackTerritoryPoints: Point[] = [];
+    const whiteTerritoryPoints: Point[] = [];
+    const neutralTerritoryPoints: Point[] = [];
 
     const visited = new Set<string>();
 
@@ -122,10 +135,13 @@ export function calculateBasicScore(
 
             if (region.owner === "black") {
                 blackTerritory += region.points.length;
+                blackTerritoryPoints.push(...region.points);
             } else if (region.owner === "white") {
                 whiteTerritory += region.points.length;
+                whiteTerritoryPoints.push(...region.points);
             } else {
                 neutralTerritory += region.points.length;
+                neutralTerritoryPoints.push(...region.points);
             }
         }
     }
@@ -144,13 +160,21 @@ export function calculateBasicScore(
     return {
         blackStones,
         whiteStones,
+
         blackTerritory,
         whiteTerritory,
         neutralTerritory,
+
+        blackTerritoryPoints,
+        whiteTerritoryPoints,
+        neutralTerritoryPoints,
+
         blackCaptured,
         whiteCaptured,
+
         blackTotal,
         whiteTotal,
+
         winner,
         margin: Math.abs(blackTotal - whiteTotal),
     };

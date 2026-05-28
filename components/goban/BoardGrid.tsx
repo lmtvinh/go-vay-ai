@@ -1,6 +1,13 @@
 "use client";
 
+import { useMemo } from "react";
 import type { Board, Player, Point } from "@/lib/go/types";
+
+type TerritoryPoints = {
+    black?: Point[];
+    white?: Point[];
+    neutral?: Point[];
+};
 
 type BoardGridProps = {
     board: Board;
@@ -13,10 +20,15 @@ type BoardGridProps = {
     previewPlayer?: Player | null;
     lastMovePoint?: Point | null;
     focusedPoint?: Point | null;
+    territoryPoints?: TerritoryPoints;
 };
 
 const BOARD_INSET_PERCENT = 12;
 const BOARD_SPAN_PERCENT = 100 - BOARD_INSET_PERCENT * 2;
+
+function getPointKey(point: Point) {
+    return `${point.row},${point.col}`;
+}
 
 export default function BoardGrid({
     board,
@@ -29,9 +41,25 @@ export default function BoardGrid({
     previewPlayer = null,
     lastMovePoint = null,
     focusedPoint = null,
+    territoryPoints,
 }: BoardGridProps) {
     const size = board.length;
     const indices = Array.from({ length: size }, (_, index) => index);
+
+    const blackTerritoryKeys = useMemo(
+        () => new Set((territoryPoints?.black ?? []).map(getPointKey)),
+        [territoryPoints]
+    );
+
+    const whiteTerritoryKeys = useMemo(
+        () => new Set((territoryPoints?.white ?? []).map(getPointKey)),
+        [territoryPoints]
+    );
+
+    const neutralTerritoryKeys = useMemo(
+        () => new Set((territoryPoints?.neutral ?? []).map(getPointKey)),
+        [territoryPoints]
+    );
 
     function getBoardPositionPercent(index: number) {
         if (size <= 1) return BOARD_INSET_PERCENT;
@@ -159,6 +187,15 @@ export default function BoardGrid({
                             focusedPoint?.row === rowIndex &&
                             focusedPoint?.col === colIndex;
 
+                        const isBlackTerritory =
+                            blackTerritoryKeys.has(pointKey);
+
+                        const isWhiteTerritory =
+                            whiteTerritoryKeys.has(pointKey);
+
+                        const isNeutralTerritory =
+                            neutralTerritoryKeys.has(pointKey);
+
                         return (
                             <button
                                 key={`${rowIndex}-${colIndex}`}
@@ -176,6 +213,18 @@ export default function BoardGrid({
                                     }, ${colIndex + 1}`}
                             >
                                 <div className="relative flex h-full w-full items-center justify-center">
+                                    {!stone && isBlackTerritory && (
+                                        <span className="pointer-events-none absolute z-[5] h-5 w-5 rounded-full bg-neutral-950/40" />
+                                    )}
+
+                                    {!stone && isWhiteTerritory && (
+                                        <span className="pointer-events-none absolute z-[5] h-5 w-5 rounded-full border border-neutral-400 bg-white/60" />
+                                    )}
+
+                                    {!stone && isNeutralTerritory && (
+                                        <span className="pointer-events-none absolute z-[5] h-4 w-4 rounded-full border border-neutral-600 bg-neutral-500/30" />
+                                    )}
+
                                     {isFocusedPoint && (
                                         <span className="pointer-events-none absolute -inset-2 z-40 rounded-full border-2 border-amber-300 shadow-[0_0_18px_rgba(251,191,36,0.9)]" />
                                     )}
