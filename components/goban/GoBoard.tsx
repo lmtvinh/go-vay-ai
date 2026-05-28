@@ -42,6 +42,23 @@ function getPointKey(point: Point) {
     return `${point.row},${point.col}`;
 }
 
+function countStones(board: Board) {
+    let black = 0;
+    let white = 0;
+
+    for (const row of board) {
+        for (const stone of row) {
+            if (stone === "black") black += 1;
+            if (stone === "white") white += 1;
+        }
+    }
+
+    return {
+        black,
+        white,
+    };
+}
+
 export default function GoBoard() {
     const router = useRouter();
     const botTurnIdRef = useRef(0);
@@ -99,19 +116,23 @@ export default function GoBoard() {
         reason,
         score,
         finalBoard = board,
+        finalBlackCaptured = blackCaptured,
+        finalWhiteCaptured = whiteCaptured,
     }: {
         nextMoves: Move[];
         gameWinner: Player | null;
         reason: GameEndReason;
         score?: BasicScoreResult;
         finalBoard?: Board;
+        finalBlackCaptured?: number;
+        finalWhiteCaptured?: number;
     }) {
         saveLatestGameReview({
             boardSize,
             board: finalBoard,
             moves: nextMoves,
-            blackCaptured,
-            whiteCaptured,
+            blackCaptured: finalBlackCaptured,
+            whiteCaptured: finalWhiteCaptured,
             winner: gameWinner,
             endReason: reason,
             createdAt: new Date().toISOString(),
@@ -119,23 +140,42 @@ export default function GoBoard() {
         });
     }
 
+    function saveCurrentGameBeforeReset() {
+        if (moveHistory.length === 0) return;
+        if (gameStatus === "finished") return;
+
+        saveReviewData({
+            nextMoves: moveHistory,
+            gameWinner: null,
+            reason: "abandoned",
+            finalBoard: board,
+            finalBlackCaptured: blackCaptured,
+            finalWhiteCaptured: whiteCaptured,
+        });
+    }
+
     function finishGameByScore({
         finalBoard,
         nextMoves,
+        finalBlackCaptured = blackCaptured,
+        finalWhiteCaptured = whiteCaptured,
     }: {
         finalBoard: Board;
         nextMoves: Move[];
+        finalBlackCaptured?: number;
+        finalWhiteCaptured?: number;
     }) {
         const score = calculateBasicScore(
             finalBoard,
-            blackCaptured,
-            whiteCaptured
+            finalBlackCaptured,
+            finalWhiteCaptured
         );
 
         setGameStatus("finished");
         setWinner(score.winner);
         setEndReason("score");
         setShowGameEndPopup(true);
+        setIsBotThinking(false);
 
         saveReviewData({
             nextMoves,
@@ -143,6 +183,8 @@ export default function GoBoard() {
             reason: "score",
             score,
             finalBoard,
+            finalBlackCaptured,
+            finalWhiteCaptured,
         });
 
         if (score.winner) {
@@ -156,6 +198,46 @@ export default function GoBoard() {
                 "Hai người chơi đã Pass liên tiếp. Ván cờ hòa theo cách tính cơ bản."
             );
         }
+    }
+
+    function finishGameByCaptureAll({
+        finalBoard,
+        nextMoves,
+        gameWinner,
+        finalBlackCaptured,
+        finalWhiteCaptured,
+    }: {
+        finalBoard: Board;
+        nextMoves: Move[];
+        gameWinner: Player;
+        finalBlackCaptured: number;
+        finalWhiteCaptured: number;
+    }) {
+        botTurnIdRef.current += 1;
+
+        setBoard(finalBoard);
+        setWinner(gameWinner);
+        setGameStatus("finished");
+        setEndReason("capture-all");
+        setShowGameEndPopup(true);
+        setIsBotThinking(false);
+        setCurrentPlayer(gameWinner);
+        setSelectedPoint(null);
+        setFocusedHistoryPoint(null);
+        setConsecutivePasses(0);
+
+        saveReviewData({
+            nextMoves,
+            gameWinner,
+            reason: "capture-all",
+            finalBoard,
+            finalBlackCaptured,
+            finalWhiteCaptured,
+        });
+
+        setMessage(
+            `${getPlayerLabel(gameWinner)} thắng vì đã ăn sạch quân đối thủ.`
+        );
     }
 
     function resetGame(nextBoardSize: BoardSize = boardSize) {
@@ -181,11 +263,13 @@ export default function GoBoard() {
     }
 
     function handleBoardSizeChange(nextBoardSize: BoardSize) {
+        saveCurrentGameBeforeReset();
         setBoardSize(nextBoardSize);
         resetGame(nextBoardSize);
     }
 
     function handleGameModeChange(nextGameMode: GameMode) {
+        saveCurrentGameBeforeReset();
         setGameMode(nextGameMode);
         resetGame();
     }
@@ -195,11 +279,15 @@ export default function GoBoard() {
         historyBeforeBotMove,
         koPreviousBoardForBot,
         consecutivePassesBeforeBot,
+        blackCapturedBeforeBot,
+        whiteCapturedBeforeBot,
     }: {
         boardBeforeBotMove: Board;
         historyBeforeBotMove: Move[];
         koPreviousBoardForBot: Board | null;
         consecutivePassesBeforeBot: number;
+        blackCapturedBeforeBot: number;
+        whiteCapturedBeforeBot: number;
     }) {
         const nextBotTurnId = botTurnIdRef.current + 1;
         botTurnIdRef.current = nextBotTurnId;
@@ -214,6 +302,8 @@ export default function GoBoard() {
                 historyBeforeBotMove,
                 koPreviousBoardForBot,
                 consecutivePassesBeforeBot,
+                blackCapturedBeforeBot,
+                whiteCapturedBeforeBot,
             });
         }, 500);
     }
@@ -223,11 +313,15 @@ export default function GoBoard() {
         historyBeforeBotMove,
         koPreviousBoardForBot,
         consecutivePassesBeforeBot,
+        blackCapturedBeforeBot,
+        whiteCapturedBeforeBot,
     }: {
         boardBeforeBotMove: Board;
         historyBeforeBotMove: Move[];
         koPreviousBoardForBot: Board | null;
         consecutivePassesBeforeBot: number;
+        blackCapturedBeforeBot: number;
+        whiteCapturedBeforeBot: number;
     }) {
         const botPlayer: Player = "white";
 
@@ -259,13 +353,17 @@ export default function GoBoard() {
                 finishGameByScore({
                     finalBoard: boardBeforeBotMove,
                     nextMoves,
+                    finalBlackCaptured: blackCapturedBeforeBot,
+                    finalWhiteCaptured: whiteCapturedBeforeBot,
                 });
 
                 return;
             }
 
             setCurrentPlayer(viewerPlayer);
-            setMessage("Bot Trắng không tìm được nước hợp lệ nên đã Pass. Đến lượt bạn.");
+            setMessage(
+                "Bot Trắng không tìm được nước hợp lệ nên đã Pass. Đến lượt bạn."
+            );
             return;
         }
 
@@ -293,11 +391,35 @@ export default function GoBoard() {
         };
 
         const nextMoves = [...historyBeforeBotMove, botMove];
+        const nextWhiteCaptured =
+            whiteCapturedBeforeBot + result.captured.length;
+
+        const stonesBeforeBotMove = countStones(boardBeforeBotMove);
+        const stonesAfterBotMove = countStones(result.board);
+
+        const blackHadStonesBefore = stonesBeforeBotMove.black > 0;
+        const blackHasNoStonesAfter = stonesAfterBotMove.black === 0;
+
+        setWhiteCaptured(nextWhiteCaptured);
+
+        if (blackHadStonesBefore && blackHasNoStonesAfter) {
+            setMoveHistory(nextMoves);
+            setLastMovePoint(botPoint);
+
+            finishGameByCaptureAll({
+                finalBoard: result.board,
+                nextMoves,
+                gameWinner: "white",
+                finalBlackCaptured: blackCapturedBeforeBot,
+                finalWhiteCaptured: nextWhiteCaptured,
+            });
+
+            return;
+        }
 
         setKoPreviousBoard(boardBeforeBotMove);
         setBoard(result.board);
         setMoveHistory(nextMoves);
-        setWhiteCaptured((prev) => prev + result.captured.length);
         setCurrentPlayer(viewerPlayer);
         setConsecutivePasses(0);
         setSelectedPoint(null);
@@ -382,6 +504,16 @@ export default function GoBoard() {
 
         const capturedCount = result.captured.length;
 
+        const nextBlackCaptured =
+            currentPlayer === "black"
+                ? blackCaptured + capturedCount
+                : blackCaptured;
+
+        const nextWhiteCaptured =
+            currentPlayer === "white"
+                ? whiteCaptured + capturedCount
+                : whiteCaptured;
+
         const nextMove: Move = {
             type: "stone",
             row,
@@ -396,11 +528,33 @@ export default function GoBoard() {
         setKoPreviousBoard(board);
         setBoard(result.board);
         setMoveHistory(nextMoves);
+        setBlackCaptured(nextBlackCaptured);
+        setWhiteCaptured(nextWhiteCaptured);
 
-        if (currentPlayer === "black") {
-            setBlackCaptured((prev) => prev + capturedCount);
-        } else {
-            setWhiteCaptured((prev) => prev + capturedCount);
+        const stonesBeforeMove = countStones(board);
+        const stonesAfterMove = countStones(result.board);
+        const opponent = getOpponent(currentPlayer);
+
+        const opponentHadStonesBefore =
+            opponent === "black"
+                ? stonesBeforeMove.black > 0
+                : stonesBeforeMove.white > 0;
+
+        const opponentHasNoStonesAfter =
+            opponent === "black"
+                ? stonesAfterMove.black === 0
+                : stonesAfterMove.white === 0;
+
+        if (opponentHadStonesBefore && opponentHasNoStonesAfter) {
+            finishGameByCaptureAll({
+                finalBoard: result.board,
+                nextMoves,
+                gameWinner: currentPlayer,
+                finalBlackCaptured: nextBlackCaptured,
+                finalWhiteCaptured: nextWhiteCaptured,
+            });
+
+            return;
         }
 
         setConsecutivePasses(0);
@@ -425,6 +579,8 @@ export default function GoBoard() {
                 historyBeforeBotMove: nextMoves,
                 koPreviousBoardForBot: board,
                 consecutivePassesBeforeBot: 0,
+                blackCapturedBeforeBot: nextBlackCaptured,
+                whiteCapturedBeforeBot: nextWhiteCaptured,
             });
 
             return;
@@ -478,6 +634,8 @@ export default function GoBoard() {
             finishGameByScore({
                 finalBoard: board,
                 nextMoves,
+                finalBlackCaptured: blackCaptured,
+                finalWhiteCaptured: whiteCaptured,
             });
 
             return;
@@ -496,6 +654,8 @@ export default function GoBoard() {
                 historyBeforeBotMove: nextMoves,
                 koPreviousBoardForBot: null,
                 consecutivePassesBeforeBot: nextConsecutivePasses,
+                blackCapturedBeforeBot: blackCaptured,
+                whiteCapturedBeforeBot: whiteCaptured,
             });
 
             return;
@@ -544,12 +704,15 @@ export default function GoBoard() {
         setShowGameEndPopup(true);
         setLastMovePoint(null);
         setFocusedHistoryPoint(null);
+        setIsBotThinking(false);
 
         saveReviewData({
             nextMoves,
             gameWinner,
             reason: "resign",
             finalBoard: board,
+            finalBlackCaptured: blackCaptured,
+            finalWhiteCaptured: whiteCaptured,
         });
 
         setMessage(
@@ -560,10 +723,12 @@ export default function GoBoard() {
     }
 
     function handleReset() {
+        saveCurrentGameBeforeReset();
         resetGame();
     }
 
     function handleExitGameMode() {
+        saveCurrentGameBeforeReset();
         router.push("/");
     }
 
