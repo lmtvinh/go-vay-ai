@@ -103,12 +103,21 @@ export default function LatestGameReview() {
                     </p>
                 </div>
 
-                <Link
-                    href="/play"
-                    className="rounded-full border border-white/20 px-5 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
-                >
-                    Chơi ván mới
-                </Link>
+                <div className="flex gap-3">
+                    <Link
+                        href="/review"
+                        className="rounded-full border border-white/20 px-5 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+                    >
+                        Lịch sử review
+                    </Link>
+
+                    <Link
+                        href="/play"
+                        className="rounded-full border border-white/20 px-5 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+                    >
+                        Chơi ván mới
+                    </Link>
+                </div>
             </header>
 
             <section className="grid gap-4 md:grid-cols-4">
