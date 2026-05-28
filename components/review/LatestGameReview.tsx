@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import GameReplay from "@/components/review/GameReplay";
 import MoveSuggestions from "@/components/review/MoveSuggestions";
+import ScoreTerritoryBoard from "@/components/review/ScoreTerritoryBoard";
 
 import type { FocusSuggestionPayload } from "@/components/review/MoveSuggestions";
 import type { SavedGameReview } from "@/lib/go/gameReviewStorage";
@@ -170,6 +171,22 @@ export default function LatestGameReview() {
                 </div>
             </section>
 
+            <section className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
+                    <p className="text-sm text-neutral-500">Nước bắt quân</p>
+                    <p className="mt-2 text-3xl font-bold text-emerald-300">
+                        {captureMoves.length}
+                    </p>
+                </div>
+
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
+                    <p className="text-sm text-neutral-500">Pass</p>
+                    <p className="mt-2 text-3xl font-bold text-white">
+                        {passMoves.length}
+                    </p>
+                </div>
+            </section>
+
             {review.score && (
                 <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -179,14 +196,16 @@ export default function LatestGameReview() {
                             </h2>
 
                             <p className="mt-2 text-sm leading-6 text-neutral-400">
-                                Đây là cách tính đơn giản để người mới hiểu ván cờ. Điểm gồm
-                                quân còn trên bàn, vùng đất được bao quanh và số quân đã bắt.
+                                Đây là cách tính đơn giản để người mới hiểu ván cờ.
+                                Điểm gồm quân còn trên bàn, vùng đất được bao quanh và
+                                số quân đã bắt.
                             </p>
                         </div>
 
                         <div className="rounded-full bg-amber-400 px-5 py-2 text-sm font-bold text-black">
                             {review.score.winner
-                                ? `${getPlayerLabel(review.score.winner)} thắng ${review.score.margin} điểm`
+                                ? `${getPlayerLabel(review.score.winner)} thắng ${review.score.margin
+                                } điểm`
                                 : "Hòa"}
                         </div>
                     </div>
@@ -219,9 +238,15 @@ export default function LatestGameReview() {
                         </div>
                     </div>
 
+                    <ScoreTerritoryBoard
+                        board={review.board}
+                        score={review.score}
+                    />
+
                     {review.score.neutralTerritory > 0 && (
                         <p className="mt-4 text-sm text-neutral-500">
-                            Vùng trung lập/chưa rõ: {review.score.neutralTerritory} điểm.
+                            Vùng trung lập/chưa rõ:{" "}
+                            {review.score.neutralTerritory} điểm.
                         </p>
                     )}
                 </section>
@@ -280,6 +305,16 @@ export default function LatestGameReview() {
                         <p>
                             Ván kết thúc bằng hai lượt Pass liên tiếp. Bước tiếp theo là
                             học cách đếm điểm để xác định người thắng.
+                        </p>
+                    )}
+
+                    {review.endReason === "score" && review.score && (
+                        <p>
+                            Ván kết thúc bằng tính điểm cơ bản.{" "}
+                            {review.score.winner
+                                ? `${getPlayerLabel(review.score.winner)} thắng ${review.score.margin
+                                } điểm.`
+                                : "Hai bên hòa điểm."}
                         </p>
                     )}
 
