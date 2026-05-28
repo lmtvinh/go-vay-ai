@@ -44,7 +44,8 @@ export type GameMode =
   | "lesson";
 
 export type GameEndReason =
-  | "resign"
-  | "double-pass"
-  | "score"
-  | "lesson-complete";
+    | "resign"
+    | "double-pass"
+    | "score"
+    | "capture-all"
+    | "abandoned";
