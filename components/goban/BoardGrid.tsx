@@ -244,7 +244,7 @@ export default function BoardGrid({
 
                                     {stone && (
                                         <span
-                                            className={`relative z-30 block h-full w-full rounded-full shadow-lg ring-offset-2 ring-offset-[#d8a850] ${stone === "black"
+                                            className={`relative z-30 block h-full w-full rounded-full shadow-lg ring-offset-2 ring-offset-[#d8a850] transition-transform duration-150 ease-out ${stone === "black"
                                                 ? "bg-neutral-950"
                                                 : "border border-neutral-300 bg-white"
                                                 } ${isGroupHighlighted
