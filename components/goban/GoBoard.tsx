@@ -893,11 +893,15 @@ export default function GoBoard() {
                             </span>
                         </p>
 
-                        {isBotThinking && (
-                            <p className="text-sm text-amber-300">
-                                Bot đang suy nghĩ...
-                            </p>
-                        )}
+                        <p
+                            className={`min-h-5 text-sm transition-opacity duration-200 ${isBotThinking
+                                ? "text-amber-300 opacity-100"
+                                : "text-amber-300 opacity-0"
+                                }`}
+                            aria-live="polite"
+                        >
+                            Bot đang suy nghĩ...
+                        </p>
 
                         {winner && (
                             <p className="text-neutral-400">
@@ -912,7 +916,9 @@ export default function GoBoard() {
                             Số nước đã đi: {moveHistory.length}
                         </p>
 
-                        <p className="mt-2 text-sm text-emerald-300">{message}</p>
+                        <div className="mt-2 min-h-10">
+                            <p className="text-sm leading-5 text-emerald-300">{message}</p>
+                        </div>
                     </div>
 
                     <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
@@ -1115,13 +1121,13 @@ export default function GoBoard() {
                         Lịch sử nước đi
                     </h3>
 
-                    {moveHistory.length === 0 ? (
-                        <p className="text-sm text-neutral-500">
-                            Chưa có nước đi nào.
-                        </p>
-                    ) : (
-                        <div className="max-h-48 space-y-2 overflow-auto text-sm">
-                            {moveHistory.map((move) => (
+                    <div className="h-48 space-y-2 overflow-auto text-sm">
+                        {moveHistory.length === 0 ? (
+                            <p className="text-sm text-neutral-500">
+                                Chưa có nước đi nào.
+                            </p>
+                        ) : (
+                            moveHistory.map((move) => (
                                 <button
                                     key={move.moveNumber}
                                     type="button"
@@ -1134,8 +1140,7 @@ export default function GoBoard() {
                                     {move.type === "stone" && (
                                         <>
                                             <span>
-                                                #{move.moveNumber}{" "}
-                                                {getPlayerLabel(move.player)} đi tại hàng{" "}
+                                                #{move.moveNumber} {getPlayerLabel(move.player)} đi tại hàng{" "}
                                                 {move.row + 1}, cột {move.col + 1}
                                             </span>
 
@@ -1149,22 +1154,20 @@ export default function GoBoard() {
 
                                     {move.type === "pass" && (
                                         <span>
-                                            #{move.moveNumber}{" "}
-                                            {getPlayerLabel(move.player)} Pass
+                                            #{move.moveNumber} {getPlayerLabel(move.player)} Pass
                                         </span>
                                     )}
 
                                     {move.type === "resign" && (
                                         <span>
-                                            #{move.moveNumber}{" "}
-                                            {getPlayerLabel(move.player)} đầu hàng.{" "}
+                                            #{move.moveNumber} {getPlayerLabel(move.player)} đầu hàng.{" "}
                                             {getPlayerLabel(move.winner)} thắng.
                                         </span>
                                     )}
                                 </button>
-                            ))}
-                        </div>
-                    )}
+                            ))
+                        )}
+                    </div>
                 </div>
             </div>
         </>
