@@ -75,7 +75,7 @@ export default function GoBoard() {
     const [consecutivePasses, setConsecutivePasses] = useState(0);
 
     const [gameMode, setGameMode] = useState<GameMode>("pvp-local");
-    const [viewerPlayer] = useState<Player>("black");
+    const [viewerPlayer, setViewerPlayer] = useState<Player>("black");
     const [isBotThinking, setIsBotThinking] = useState(false);
 
     const [endReason, setEndReason] = useState<GameEndReason | null>(null);
@@ -171,11 +171,15 @@ export default function GoBoard() {
             finalWhiteCaptured
         );
 
+        setBoard(finalBoard);
         setGameStatus("finished");
         setWinner(score.winner);
         setEndReason("score");
         setShowGameEndPopup(true);
         setIsBotThinking(false);
+        setSelectedPoint(null);
+        setFocusedHistoryPoint(null);
+        setLastMovePoint(null);
 
         saveReviewData({
             nextMoves,
@@ -240,40 +244,6 @@ export default function GoBoard() {
         );
     }
 
-    function resetGame(nextBoardSize: BoardSize = boardSize) {
-        botTurnIdRef.current += 1;
-
-        setBoard(createEmptyBoard(nextBoardSize));
-        setCurrentPlayer("black");
-        setMoveHistory([]);
-        setBlackCaptured(0);
-        setWhiteCaptured(0);
-        setMessage("Đen đi trước.");
-        setGameStatus("playing");
-        setWinner(null);
-        setConsecutivePasses(0);
-        setEndReason(null);
-        setShowGameEndPopup(false);
-        setErrorMessage(null);
-        setSelectedPoint(null);
-        setLastMovePoint(null);
-        setFocusedHistoryPoint(null);
-        setKoPreviousBoard(null);
-        setIsBotThinking(false);
-    }
-
-    function handleBoardSizeChange(nextBoardSize: BoardSize) {
-        saveCurrentGameBeforeReset();
-        setBoardSize(nextBoardSize);
-        resetGame(nextBoardSize);
-    }
-
-    function handleGameModeChange(nextGameMode: GameMode) {
-        saveCurrentGameBeforeReset();
-        setGameMode(nextGameMode);
-        resetGame();
-    }
-
     function scheduleBotTurn({
         boardBeforeBotMove,
         historyBeforeBotMove,
@@ -281,6 +251,8 @@ export default function GoBoard() {
         consecutivePassesBeforeBot,
         blackCapturedBeforeBot,
         whiteCapturedBeforeBot,
+        botPlayer,
+        humanPlayer,
     }: {
         boardBeforeBotMove: Board;
         historyBeforeBotMove: Move[];
@@ -288,6 +260,8 @@ export default function GoBoard() {
         consecutivePassesBeforeBot: number;
         blackCapturedBeforeBot: number;
         whiteCapturedBeforeBot: number;
+        botPlayer: Player;
+        humanPlayer: Player;
     }) {
         const nextBotTurnId = botTurnIdRef.current + 1;
         botTurnIdRef.current = nextBotTurnId;
@@ -304,8 +278,89 @@ export default function GoBoard() {
                 consecutivePassesBeforeBot,
                 blackCapturedBeforeBot,
                 whiteCapturedBeforeBot,
+                botPlayer,
+                humanPlayer,
             });
         }, 500);
+    }
+
+    function startFreshGame({
+        nextBoardSize = boardSize,
+        nextGameMode = gameMode,
+        nextViewerPlayer = viewerPlayer,
+    }: {
+        nextBoardSize?: BoardSize;
+        nextGameMode?: GameMode;
+        nextViewerPlayer?: Player;
+    } = {}) {
+        botTurnIdRef.current += 1;
+
+        const freshBoard = createEmptyBoard(nextBoardSize);
+
+        setBoard(freshBoard);
+        setCurrentPlayer("black");
+        setMoveHistory([]);
+        setBlackCaptured(0);
+        setWhiteCaptured(0);
+        setGameStatus("playing");
+        setWinner(null);
+        setConsecutivePasses(0);
+        setEndReason(null);
+        setShowGameEndPopup(false);
+        setErrorMessage(null);
+        setSelectedPoint(null);
+        setLastMovePoint(null);
+        setFocusedHistoryPoint(null);
+        setKoPreviousBoard(null);
+        setIsBotThinking(false);
+
+        if (nextGameMode === "human-vs-bot" && nextViewerPlayer === "white") {
+            setMessage("Bạn cầm Trắng. Bot Đen đang suy nghĩ...");
+
+            scheduleBotTurn({
+                boardBeforeBotMove: freshBoard,
+                historyBeforeBotMove: [],
+                koPreviousBoardForBot: null,
+                consecutivePassesBeforeBot: 0,
+                blackCapturedBeforeBot: 0,
+                whiteCapturedBeforeBot: 0,
+                botPlayer: "black",
+                humanPlayer: "white",
+            });
+
+            return;
+        }
+
+        setMessage("Đen đi trước.");
+    }
+
+    function handleBoardSizeChange(nextBoardSize: BoardSize) {
+        saveCurrentGameBeforeReset();
+        setBoardSize(nextBoardSize);
+
+        startFreshGame({
+            nextBoardSize,
+        });
+    }
+
+    function handleGameModeChange(nextGameMode: GameMode) {
+        saveCurrentGameBeforeReset();
+        setGameMode(nextGameMode);
+
+        startFreshGame({
+            nextGameMode,
+        });
+    }
+
+    function handleViewerPlayerChange(nextViewerPlayer: Player) {
+        if (viewerPlayer === nextViewerPlayer) return;
+
+        saveCurrentGameBeforeReset();
+        setViewerPlayer(nextViewerPlayer);
+
+        startFreshGame({
+            nextViewerPlayer,
+        });
     }
 
     function playBotTurn({
@@ -315,6 +370,8 @@ export default function GoBoard() {
         consecutivePassesBeforeBot,
         blackCapturedBeforeBot,
         whiteCapturedBeforeBot,
+        botPlayer,
+        humanPlayer,
     }: {
         boardBeforeBotMove: Board;
         historyBeforeBotMove: Move[];
@@ -322,9 +379,9 @@ export default function GoBoard() {
         consecutivePassesBeforeBot: number;
         blackCapturedBeforeBot: number;
         whiteCapturedBeforeBot: number;
+        botPlayer: Player;
+        humanPlayer: Player;
     }) {
-        const botPlayer: Player = "white";
-
         const botPoint = chooseBasicBotMove({
             board: boardBeforeBotMove,
             player: botPlayer,
@@ -360,9 +417,11 @@ export default function GoBoard() {
                 return;
             }
 
-            setCurrentPlayer(viewerPlayer);
+            setCurrentPlayer(humanPlayer);
             setMessage(
-                "Bot Trắng không tìm được nước hợp lệ nên đã Pass. Đến lượt bạn."
+                `Bot ${getPlayerLabel(
+                    botPlayer
+                )} không tìm được nước hợp lệ nên đã Pass. Đến lượt bạn.`
             );
             return;
         }
@@ -375,7 +434,7 @@ export default function GoBoard() {
         );
 
         if (!result.ok) {
-            setCurrentPlayer(viewerPlayer);
+            setCurrentPlayer(humanPlayer);
             setIsBotThinking(false);
             setMessage("Bot không thể đi nước hợp lệ. Đến lượt bạn.");
             return;
@@ -391,26 +450,41 @@ export default function GoBoard() {
         };
 
         const nextMoves = [...historyBeforeBotMove, botMove];
+
+        const nextBlackCaptured =
+            botPlayer === "black"
+                ? blackCapturedBeforeBot + result.captured.length
+                : blackCapturedBeforeBot;
+
         const nextWhiteCaptured =
-            whiteCapturedBeforeBot + result.captured.length;
+            botPlayer === "white"
+                ? whiteCapturedBeforeBot + result.captured.length
+                : whiteCapturedBeforeBot;
 
         const stonesBeforeBotMove = countStones(boardBeforeBotMove);
         const stonesAfterBotMove = countStones(result.board);
 
-        const blackHadStonesBefore = stonesBeforeBotMove.black > 0;
-        const blackHasNoStonesAfter = stonesAfterBotMove.black === 0;
+        const humanHadStonesBefore =
+            humanPlayer === "black"
+                ? stonesBeforeBotMove.black > 0
+                : stonesBeforeBotMove.white > 0;
 
+        const humanHasNoStonesAfter =
+            humanPlayer === "black"
+                ? stonesAfterBotMove.black === 0
+                : stonesAfterBotMove.white === 0;
+
+        setBlackCaptured(nextBlackCaptured);
         setWhiteCaptured(nextWhiteCaptured);
+        setMoveHistory(nextMoves);
+        setLastMovePoint(botPoint);
 
-        if (blackHadStonesBefore && blackHasNoStonesAfter) {
-            setMoveHistory(nextMoves);
-            setLastMovePoint(botPoint);
-
+        if (humanHadStonesBefore && humanHasNoStonesAfter) {
             finishGameByCaptureAll({
                 finalBoard: result.board,
                 nextMoves,
-                gameWinner: "white",
-                finalBlackCaptured: blackCapturedBeforeBot,
+                gameWinner: botPlayer,
+                finalBlackCaptured: nextBlackCaptured,
                 finalWhiteCaptured: nextWhiteCaptured,
             });
 
@@ -419,23 +493,22 @@ export default function GoBoard() {
 
         setKoPreviousBoard(boardBeforeBotMove);
         setBoard(result.board);
-        setMoveHistory(nextMoves);
-        setCurrentPlayer(viewerPlayer);
+        setCurrentPlayer(humanPlayer);
         setConsecutivePasses(0);
         setSelectedPoint(null);
         setFocusedHistoryPoint(null);
-        setLastMovePoint(botPoint);
         setIsBotThinking(false);
 
         if (result.captured.length > 0) {
             setMessage(
-                `Bot Trắng vừa đi hàng ${botPoint.row + 1}, cột ${botPoint.col + 1
-                } và bắt ${result.captured.length} quân. Đến lượt bạn.`
+                `Bot ${getPlayerLabel(botPlayer)} vừa đi hàng ${botPoint.row + 1
+                }, cột ${botPoint.col + 1} và bắt ${result.captured.length
+                } quân. Đến lượt bạn.`
             );
         } else {
             setMessage(
-                `Bot Trắng vừa đi hàng ${botPoint.row + 1}, cột ${botPoint.col + 1
-                }. Đến lượt bạn.`
+                `Bot ${getPlayerLabel(botPlayer)} vừa đi hàng ${botPoint.row + 1
+                }, cột ${botPoint.col + 1}. Đến lượt bạn.`
             );
         }
     }
@@ -581,6 +654,8 @@ export default function GoBoard() {
                 consecutivePassesBeforeBot: 0,
                 blackCapturedBeforeBot: nextBlackCaptured,
                 whiteCapturedBeforeBot: nextWhiteCaptured,
+                botPlayer: nextPlayer,
+                humanPlayer: viewerPlayer,
             });
 
             return;
@@ -656,6 +731,8 @@ export default function GoBoard() {
                 consecutivePassesBeforeBot: nextConsecutivePasses,
                 blackCapturedBeforeBot: blackCaptured,
                 whiteCapturedBeforeBot: whiteCaptured,
+                botPlayer: nextPlayer,
+                humanPlayer: viewerPlayer,
             });
 
             return;
@@ -724,7 +801,7 @@ export default function GoBoard() {
 
     function handleReset() {
         saveCurrentGameBeforeReset();
-        resetGame();
+        startFreshGame();
     }
 
     function handleExitGameMode() {
@@ -800,6 +877,15 @@ export default function GoBoard() {
                             </span>
                         </p>
 
+                        {gameMode === "human-vs-bot" && (
+                            <p className="text-neutral-400">
+                                Bạn cầm:{" "}
+                                <span className="font-semibold text-amber-300">
+                                    {getPlayerLabel(viewerPlayer)}
+                                </span>
+                            </p>
+                        )}
+
                         <p className="text-neutral-400">
                             Lượt hiện tại:{" "}
                             <span className="font-semibold text-amber-300">
@@ -858,6 +944,42 @@ export default function GoBoard() {
                             </button>
                         </div>
                     </div>
+
+                    {gameMode === "human-vs-bot" && (
+                        <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
+                                Quân của bạn
+                            </p>
+
+                            <div className="mt-3 grid grid-cols-2 gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => handleViewerPlayerChange("black")}
+                                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${viewerPlayer === "black"
+                                        ? "border-amber-300 bg-amber-400 text-black"
+                                        : "border-white/20 text-white hover:bg-white/10"
+                                        }`}
+                                >
+                                    Đen
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => handleViewerPlayerChange("white")}
+                                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${viewerPlayer === "white"
+                                        ? "border-amber-300 bg-amber-400 text-black"
+                                        : "border-white/20 text-white hover:bg-white/10"
+                                        }`}
+                                >
+                                    Trắng
+                                </button>
+                            </div>
+
+                            <p className="mt-3 text-xs leading-5 text-neutral-500">
+                                Nếu bạn chọn Trắng, bot cầm Đen và sẽ đi trước.
+                            </p>
+                        </div>
+                    )}
 
                     <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
                         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
