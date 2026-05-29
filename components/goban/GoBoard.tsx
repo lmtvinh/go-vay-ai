@@ -39,6 +39,7 @@ type GoBoardProps = {
     initialGameMode?: GameMode;
     initialViewerPlayer?: Player;
     initialBotDifficulty?: BotDifficulty;
+    initialBoardSize?: BoardSize;
 };
 
 function getPlayerLabel(player: Player) {
@@ -142,6 +143,7 @@ export default function GoBoard({
     initialGameMode = "pvp-local",
     initialViewerPlayer = "black",
     initialBotDifficulty = "normal",
+    initialBoardSize = 9,
 }: GoBoardProps) {
     const router = useRouter();
 
@@ -152,7 +154,9 @@ export default function GoBoard({
     const viewerPlayer = initialViewerPlayer;
 
     const [boardSize, setBoardSize] = useState<BoardSize>(9);
-    const [board, setBoard] = useState<Board>(() => createEmptyBoard(9));
+    const [board, setBoard] = useState<Board>(() =>
+        createEmptyBoard(initialBoardSize)
+    );
     const [currentPlayer, setCurrentPlayer] = useState<Player>("black");
     const [moveHistory, setMoveHistory] = useState<Move[]>([]);
     const [blackCaptured, setBlackCaptured] = useState(0);
@@ -595,12 +599,6 @@ export default function GoBoard({
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-
-    function handleBoardSizeChange(nextBoardSize: BoardSize) {
-        saveCurrentGameBeforeReset();
-        setBoardSize(nextBoardSize);
-        startFreshGame(nextBoardSize);
-    }
 
     function handlePlaceStone(row: number, col: number) {
         if (gameStatus === "finished") {
@@ -1079,23 +1077,45 @@ export default function GoBoard({
 
                     <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
                         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
-                            Kích thước bàn
+                            Thiết lập
                         </p>
 
-                        <div className="mt-3 grid grid-cols-2 gap-2">
-                            {SUPPORTED_BOARD_SIZES.map((size) => (
-                                <button
-                                    key={size}
-                                    type="button"
-                                    onClick={() => handleBoardSizeChange(size)}
-                                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${boardSize === size
-                                        ? "border-amber-300 bg-amber-400 text-black"
-                                        : "border-white/20 text-white hover:bg-white/10"
-                                        }`}
-                                >
-                                    {size}x{size}
-                                </button>
-                            ))}
+                        <div className="mt-3 space-y-2 text-sm text-neutral-300">
+                            <p>
+                                Bàn:{" "}
+                                <span className="font-semibold text-amber-300">
+                                    {boardSize}x{boardSize}
+                                </span>
+                            </p>
+
+                            <p>
+                                Chế độ:{" "}
+                                <span className="font-semibold text-emerald-300">
+                                    {gameMode === "human-vs-bot" ? "Người vs Bot" : "Người vs Người"}
+                                </span>
+                            </p>
+
+                            {gameMode === "human-vs-bot" && (
+                                <>
+                                    <p>
+                                        Bạn cầm:{" "}
+                                        <span className="font-semibold text-amber-300">
+                                            {getPlayerLabel(viewerPlayer)}
+                                        </span>
+                                    </p>
+
+                                    <p>
+                                        Bot:{" "}
+                                        <span className="font-semibold text-emerald-300">
+                                            {botDifficulty === "easy"
+                                                ? "Dễ"
+                                                : botDifficulty === "hard"
+                                                    ? "Khó"
+                                                    : "Thường"}
+                                        </span>
+                                    </p>
+                                </>
+                            )}
                         </div>
 
                         <button
@@ -1104,9 +1124,9 @@ export default function GoBoard({
                                 saveCurrentGameBeforeReset();
                                 router.push("/play");
                             }}
-                            className="mt-3 w-full rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+                            className="mt-4 w-full rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
                         >
-                            Đổi chế độ
+                            Đổi thiết lập
                         </button>
                     </div>
 
