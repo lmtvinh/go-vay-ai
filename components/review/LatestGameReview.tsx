@@ -318,6 +318,7 @@ export default function LatestGameReview() {
 
             <MoveSuggestions
                 moves={review.moves}
+                boardSize={boardSize}
                 onFocusSuggestion={handleFocusSuggestion}
             />
 

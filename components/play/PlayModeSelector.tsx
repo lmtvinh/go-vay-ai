@@ -76,10 +76,11 @@ export default function PlayModeSelector() {
                             key={size}
                             type="button"
                             onClick={() => setSelectedBoardSize(size)}
-                            className={`rounded-2xl border px-5 py-4 text-center font-semibold transition ${selectedBoardSize === size
-                                ? "border-amber-300 bg-amber-400 text-black"
-                                : "border-white/10 bg-black/20 text-white hover:bg-white/10"
-                                }`}
+                            className={`rounded-2xl border px-5 py-4 text-center font-semibold transition ${
+                                selectedBoardSize === size
+                                    ? "border-amber-300 bg-amber-400 text-black"
+                                    : "border-white/10 bg-black/20 text-white hover:bg-white/10"
+                            }`}
                         >
                             {size}x{size}
                         </button>
@@ -142,10 +143,11 @@ export default function PlayModeSelector() {
                                     key={level.level}
                                     type="button"
                                     onClick={() => setSelectedBotLevel(level.level)}
-                                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${selectedBotLevel === level.level
-                                        ? "border-emerald-300 bg-emerald-400 text-black"
-                                        : "border-white/20 text-white hover:bg-white/10"
-                                        }`}
+                                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                                        selectedBotLevel === level.level
+                                            ? "border-emerald-300 bg-emerald-400 text-black"
+                                            : "border-white/20 text-white hover:bg-white/10"
+                                    }`}
                                 >
                                     {level.title}
                                 </button>
