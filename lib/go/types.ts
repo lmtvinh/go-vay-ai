@@ -15,6 +15,8 @@ export type GameMode =
     | "pvp-local"
     | "human-vs-bot";
 
+export type BotDifficulty = "easy" | "normal" | "hard";
+
 export type GameEndReason =
     | "resign"
     | "double-pass"

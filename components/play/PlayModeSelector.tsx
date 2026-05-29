@@ -38,34 +38,53 @@ export default function PlayModeSelector() {
                 </article>
 
                 <article className="rounded-3xl border border-white/10 bg-white/[0.03] p-6">
-                    <h2 className="text-2xl font-bold text-white">
-                        Người vs Bot
-                    </h2>
+                    <div className="mt-6 space-y-4">
+                        {[
+                            {
+                                level: "easy",
+                                title: "Dễ",
+                                description: "Bot chọn nước hợp lệ đơn giản, phù hợp để làm quen.",
+                            },
+                            {
+                                level: "normal",
+                                title: "Thường",
+                                description: "Bot ưu tiên bắt quân và chọn nước có nhiều khí.",
+                            },
+                            {
+                                level: "hard",
+                                title: "Khó",
+                                description: "Bot đánh an toàn hơn và ưu tiên vị trí tốt hơn.",
+                            },
+                        ].map((option) => (
+                            <div
+                                key={option.level}
+                                className="rounded-2xl border border-white/10 bg-black/20 p-4"
+                            >
+                                <div>
+                                    <h3 className="font-bold text-white">{option.title}</h3>
+                                    <p className="mt-1 text-xs leading-5 text-neutral-500">
+                                        {option.description}
+                                    </p>
+                                </div>
 
-                    <p className="mt-3 text-sm leading-6 text-neutral-400">
-                        Chơi với bot cơ bản. Bot sẽ ưu tiên bắt quân và chọn
-                        nước có nhiều khí hơn.
-                    </p>
+                                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                                    <Link
+                                        href={`/play/bot?side=black&level=${option.level}`}
+                                        className="rounded-full bg-emerald-400 px-5 py-2 text-center text-sm font-semibold text-black transition hover:bg-emerald-300"
+                                    >
+                                        Tôi cầm Đen
+                                    </Link>
 
-                    <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                        <Link
-                            href="/play/bot?side=black"
-                            className="rounded-full bg-emerald-400 px-6 py-3 text-center font-semibold text-black transition hover:bg-emerald-300"
-                        >
-                            Tôi cầm Đen
-                        </Link>
-
-                        <Link
-                            href="/play/bot?side=white"
-                            className="rounded-full border border-white/20 px-6 py-3 text-center font-semibold text-white transition hover:bg-white/10"
-                        >
-                            Tôi cầm Trắng
-                        </Link>
+                                    <Link
+                                        href={`/play/bot?side=white&level=${option.level}`}
+                                        className="rounded-full border border-white/20 px-5 py-2 text-center text-sm font-semibold text-white transition hover:bg-white/10"
+                                    >
+                                        Tôi cầm Trắng
+                                    </Link>
+                                </div>
+                            </div>
+                        ))}
                     </div>
-
-                    <p className="mt-3 text-xs leading-5 text-neutral-500">
-                        Nếu bạn cầm Trắng, bot cầm Đen và sẽ đi trước.
-                    </p>
                 </article>
             </section>
         </div>
