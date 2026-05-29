@@ -56,7 +56,7 @@ export default function PlayModeSelector() {
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                         <h2 className="text-2xl font-bold text-white">
-                            Kích thước bàn
+                            Chọn kích thước bàn
                         </h2>
 
                         <p className="mt-2 text-sm leading-6 text-neutral-400">
@@ -76,10 +76,11 @@ export default function PlayModeSelector() {
                             key={size}
                             type="button"
                             onClick={() => setSelectedBoardSize(size)}
-                            className={`rounded-2xl border px-5 py-4 text-center font-semibold transition ${selectedBoardSize === size
-                                ? "border-amber-300 bg-amber-400 text-black"
-                                : "border-white/10 bg-black/20 text-white hover:bg-white/10"
-                                }`}
+                            className={`rounded-2xl border px-5 py-4 text-center font-semibold transition ${
+                                selectedBoardSize === size
+                                    ? "border-amber-300 bg-amber-400 text-black"
+                                    : "border-white/10 bg-black/20 text-white hover:bg-white/10"
+                            }`}
                         >
                             {size}x{size}
                         </button>
@@ -89,7 +90,7 @@ export default function PlayModeSelector() {
 
             <section className="grid gap-5 lg:grid-cols-2">
                 <article className="rounded-3xl border border-white/10 bg-white/[0.03] p-6">
-                    <div className="flex h-full flex-col">
+                    <div className="flex h-full flex-col justify-between">
                         <div>
                             <p className="text-sm uppercase tracking-[0.25em] text-neutral-500">
                                 Local
@@ -100,20 +101,18 @@ export default function PlayModeSelector() {
                             </h2>
 
                             <p className="mt-3 text-sm leading-6 text-neutral-400">
-                                Hai người chơi trên cùng một máy. Phù hợp để luyện luật,
-                                thử thế cờ và học cách bắt quân.
+                                Hai người chơi trên cùng một máy. Phù hợp để luyện
+                                luật, thử thế cờ và học cách bắt quân.
                             </p>
                         </div>
 
-                        <div className="mt-6">
-                            <Link
-                                href={`/play/pvp?size=${selectedBoardSize}`}
-                                className="inline-flex w-full justify-center rounded-full bg-amber-400 px-6 py-3 font-semibold text-black transition hover:bg-amber-300"
-                            >
-                                Chơi PvP với bàn {selectedBoardSize}x
-                                {selectedBoardSize}
-                            </Link>
-                        </div>
+                        <Link
+                            href={`/play/pvp?size=${selectedBoardSize}`}
+                            className="mt-6 inline-flex w-full justify-center rounded-full bg-amber-400 px-6 py-3 font-semibold text-black transition hover:bg-amber-300"
+                        >
+                            Chơi PvP với bàn {selectedBoardSize}x
+                            {selectedBoardSize}
+                        </Link>
                     </div>
                 </article>
 
@@ -144,10 +143,11 @@ export default function PlayModeSelector() {
                                     key={level.level}
                                     type="button"
                                     onClick={() => setSelectedBotLevel(level.level)}
-                                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${selectedBotLevel === level.level
-                                        ? "border-emerald-300 bg-emerald-400 text-black"
-                                        : "border-white/20 text-white hover:bg-white/10"
-                                        }`}
+                                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                                        selectedBotLevel === level.level
+                                            ? "border-emerald-300 bg-emerald-400 text-black"
+                                            : "border-white/20 text-white hover:bg-white/10"
+                                    }`}
                                 >
                                     {level.title}
                                 </button>

@@ -242,6 +242,9 @@ export default function GoBoard({
             endReason: reason,
             createdAt: new Date().toISOString(),
             score,
+            gameMode,
+            viewerPlayer,
+            botDifficulty,
         });
     }
 
