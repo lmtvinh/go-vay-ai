@@ -2,7 +2,9 @@
 
 import type {
     Board,
+    BotDifficulty,
     GameEndReason,
+    GameMode,
     Move,
     Player,
 } from "@/lib/go/types";
@@ -24,6 +26,10 @@ export type SavedGameReview = {
     endReason: GameEndReason;
     createdAt: string;
     score?: BasicScoreResult;
+
+    gameMode?: GameMode;
+    viewerPlayer?: Player;
+    botDifficulty?: BotDifficulty;
 };
 
 function createReviewId() {

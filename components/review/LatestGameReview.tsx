@@ -26,6 +26,17 @@ function getReviewBoardSize(review: SavedGameReview) {
     return review.boardSize ?? review.board.length;
 }
 
+function getGameModeLabel(review: SavedGameReview) {
+    if (review.gameMode === "human-vs-bot") return "Người vs Bot";
+    return "Người vs Người";
+}
+
+function getBotDifficultyLabel(review: SavedGameReview) {
+    if (review.botDifficulty === "easy") return "Dễ";
+    if (review.botDifficulty === "hard") return "Khó";
+    return "Thường";
+}
+
 export default function LatestGameReview() {
     const replaySectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -120,7 +131,7 @@ export default function LatestGameReview() {
                 </div>
             </header>
 
-            <section className="grid gap-4 md:grid-cols-4">
+            <section className="grid gap-4 md:grid-cols-5">
                 <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
                     <p className="text-sm text-neutral-500">Kết thúc bởi</p>
                     <p className="mt-2 text-2xl font-bold text-white">
@@ -148,9 +159,26 @@ export default function LatestGameReview() {
                         {boardSize}x{boardSize}
                     </p>
                 </div>
+
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
+                    <p className="text-sm text-neutral-500">Chế độ</p>
+                    <p className="mt-2 text-2xl font-bold text-emerald-300">
+                        {getGameModeLabel(review)}
+                    </p>
+
+                    {review.gameMode === "human-vs-bot" && (
+                        <p className="mt-2 text-xs leading-5 text-neutral-500">
+                            Bạn cầm{" "}
+                            <span className="font-semibold text-amber-300">
+                                {getPlayerLabel(review.viewerPlayer ?? "black")}
+                            </span>{" "}
+                            · Bot {getBotDifficultyLabel(review)}
+                        </p>
+                    )}
+                </div>
             </section>
 
-            <section className="grid gap-4 md:grid-cols-4">
+            <section className="grid gap-4 md:grid-cols-5">
                 <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
                     <p className="text-sm text-neutral-500">Đen đã bắt</p>
                     <p className="mt-2 text-3xl font-bold text-white">

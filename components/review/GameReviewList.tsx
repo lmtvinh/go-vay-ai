@@ -31,6 +31,17 @@ function formatDate(value: string) {
     }
 }
 
+function getGameModeLabel(review: SavedGameReview) {
+    if (review.gameMode === "human-vs-bot") return "Người vs Bot";
+    return "Người vs Người";
+}
+
+function getBotDifficultyLabel(review: SavedGameReview) {
+    if (review.botDifficulty === "easy") return "Dễ";
+    if (review.botDifficulty === "hard") return "Khó";
+    return "Thường";
+}
+
 export default function GameReviewList() {
     const [reviews, setReviews] = useState<SavedGameReview[]>([]);
 
@@ -121,7 +132,7 @@ export default function GameReviewList() {
 
                                 <h2 className="mt-2 text-2xl font-bold text-white">
                                     Bàn {review.boardSize}x{review.boardSize} ·{" "}
-                                    {getEndReasonLabel(review.endReason)}
+                                    {getGameModeLabel(review)} · {getEndReasonLabel(review.endReason)}
                                 </h2>
 
                                 <p className="mt-2 text-sm text-neutral-400">
@@ -129,6 +140,13 @@ export default function GameReviewList() {
                                     {review.blackCaptured} · Trắng bắt{" "}
                                     {review.whiteCaptured}
                                 </p>
+
+                                {review.gameMode === "human-vs-bot" && (
+                                    <p className="mt-2 text-sm text-neutral-500">
+                                        Bạn cầm {getPlayerLabel(review.viewerPlayer ?? "black")} · Bot{" "}
+                                        {getBotDifficultyLabel(review)}
+                                    </p>
+                                )}
                             </div>
 
                             <div className="flex flex-col gap-2 sm:flex-row lg:flex-col">
