@@ -30,6 +30,7 @@ import ErrorPopup from "@/components/ui/ErrorPopup";
 import GameEndPopup from "@/components/ui/GameEndPopup";
 import BoardGrid from "@/components/goban/BoardGrid";
 import { saveLatestGameReview } from "@/lib/go/gameReviewStorage";
+import ConfirmPopup from "@/components/ui/ConfirmPopup";
 
 const SUPPORTED_BOARD_SIZES = [9, 12, 13, 19] as const;
 
@@ -41,6 +42,8 @@ type GoBoardProps = {
     initialBotDifficulty?: BotDifficulty;
     initialBoardSize?: BoardSize;
 };
+
+type PendingAbandonAction = "reset" | "change-setup" | "exit" | null;
 
 function getPlayerLabel(player: Player) {
     return player === "black" ? "Đen" : "Trắng";
@@ -209,6 +212,9 @@ export default function GoBoard({
             (gameMode === "human-vs-bot" && currentPlayer !== viewerPlayer)
             ? null
             : currentPlayer;
+
+    const [pendingAbandonAction, setPendingAbandonAction] =
+        useState<PendingAbandonAction>(null);
 
     function showError(error: string) {
         setErrorMessage(error);
@@ -972,13 +978,11 @@ export default function GoBoard({
     }
 
     function handleReset() {
-        saveCurrentGameBeforeReset();
-        startFreshGame();
+        requestAbandonAction("reset");
     }
 
     function handleExitGameMode() {
-        saveCurrentGameBeforeReset();
-        router.push("/play");
+        requestAbandonAction("exit");
     }
 
     function handleReviewGame() {
@@ -1000,11 +1004,69 @@ export default function GoBoard({
         );
     }
 
+    function hasActiveUnfinishedGame() {
+        return moveHistory.length > 0 && gameStatus !== "finished";
+    }
+
+    function runAbandonAction(action: Exclude<PendingAbandonAction, null>) {
+        saveCurrentGameBeforeReset();
+
+        if (action === "reset") {
+            startFreshGame();
+            return;
+        }
+
+        if (action === "change-setup") {
+            router.push("/play");
+            return;
+        }
+
+        if (action === "exit") {
+            router.push("/play");
+        }
+    }
+
+    function requestAbandonAction(action: Exclude<PendingAbandonAction, null>) {
+        if (!hasActiveUnfinishedGame()) {
+            runAbandonAction(action);
+            return;
+        }
+
+        setPendingAbandonAction(action);
+    }
+
+    function handleConfirmAbandonAction() {
+        if (!pendingAbandonAction) return;
+
+        const action = pendingAbandonAction;
+
+        setPendingAbandonAction(null);
+        runAbandonAction(action);
+    }
+
+    function handleCancelAbandonAction() {
+        setPendingAbandonAction(null);
+    }
+
     return (
         <>
             <ErrorPopup
                 message={errorMessage}
                 onClose={() => setErrorMessage(null)}
+            />
+
+            <ConfirmPopup
+                isOpen={pendingAbandonAction !== null}
+                title="Ván hiện tại chưa kết thúc"
+                description="Nếu tiếp tục, ván hiện tại sẽ được lưu vào lịch sử review với trạng thái đã lưu trước khi reset hoặc đổi thiết lập."
+                confirmLabel={
+                    pendingAbandonAction === "reset"
+                        ? "Lưu và Reset"
+                        : "Lưu và rời ván"
+                }
+                cancelLabel="Ở lại ván"
+                onConfirm={handleConfirmAbandonAction}
+                onCancel={handleCancelAbandonAction}
             />
 
             {endReason && (
@@ -1137,10 +1199,7 @@ export default function GoBoard({
 
                         <button
                             type="button"
-                            onClick={() => {
-                                saveCurrentGameBeforeReset();
-                                router.push("/play");
-                            }}
+                            onClick={() => requestAbandonAction("change-setup")}
                             className="mt-4 w-full rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
                         >
                             Đổi thiết lập
