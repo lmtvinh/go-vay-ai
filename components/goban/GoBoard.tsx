@@ -50,6 +50,10 @@ function getPointKey(point: Point) {
     return `${point.row},${point.col}`;
 }
 
+function cloneBoard(board: Board): Board {
+    return board.map((row) => [...row]);
+}
+
 function countStones(board: Board) {
     let black = 0;
     let white = 0;
@@ -67,10 +71,6 @@ function countStones(board: Board) {
     };
 }
 
-function cloneBoard(board: Board): Board {
-    return board.map((row) => [...row]);
-}
-
 function rebuildGameFromMoves({
     moves,
     boardSize,
@@ -84,6 +84,7 @@ function rebuildGameFromMoves({
     let nextPlayer: Player = "black";
     let lastStonePoint: Point | null = null;
     let previousBoardForKo: Board | null = null;
+    let consecutivePasses = 0;
 
     for (const move of moves) {
         if (move.type === "stone") {
@@ -111,6 +112,7 @@ function rebuildGameFromMoves({
                 }
 
                 nextPlayer = getOpponent(move.player);
+                consecutivePasses = 0;
             }
 
             continue;
@@ -120,6 +122,7 @@ function rebuildGameFromMoves({
             nextPlayer = getOpponent(move.player);
             lastStonePoint = null;
             previousBoardForKo = null;
+            consecutivePasses += 1;
             continue;
         }
 
@@ -136,7 +139,14 @@ function rebuildGameFromMoves({
         currentPlayer: nextPlayer,
         lastMovePoint: lastStonePoint,
         koPreviousBoard: previousBoardForKo,
+        consecutivePasses,
     };
+}
+
+function getBotDifficultyLabel(difficulty: BotDifficulty) {
+    if (difficulty === "easy") return "Dễ";
+    if (difficulty === "hard") return "Khó";
+    return "Thường";
 }
 
 export default function GoBoard({
@@ -152,8 +162,9 @@ export default function GoBoard({
 
     const gameMode = initialGameMode;
     const viewerPlayer = initialViewerPlayer;
+    const botDifficulty = initialBotDifficulty;
 
-    const [boardSize, setBoardSize] = useState<BoardSize>(9);
+    const [boardSize] = useState<BoardSize>(initialBoardSize);
     const [board, setBoard] = useState<Board>(() =>
         createEmptyBoard(initialBoardSize)
     );
@@ -198,8 +209,6 @@ export default function GoBoard({
             (gameMode === "human-vs-bot" && currentPlayer !== viewerPlayer)
             ? null
             : currentPlayer;
-
-    const botDifficulty = initialBotDifficulty;
 
     function showError(error: string) {
         setErrorMessage(error);
@@ -380,10 +389,10 @@ export default function GoBoard({
         }, 500);
     }
 
-    function startFreshGame(nextBoardSize: BoardSize = boardSize) {
+    function startFreshGame() {
         botTurnIdRef.current += 1;
 
-        const freshBoard = createEmptyBoard(nextBoardSize);
+        const freshBoard = createEmptyBoard(boardSize);
 
         setBoard(freshBoard);
         setCurrentPlayer("black");
@@ -888,6 +897,77 @@ export default function GoBoard({
         );
     }
 
+    function handleUndo() {
+        if (isBotThinking) {
+            showError("Bot đang suy nghĩ. Hãy chờ bot đi xong rồi mới Undo.");
+            return;
+        }
+
+        if (moveHistory.length === 0) {
+            showError("Chưa có nước đi nào để Undo.");
+            return;
+        }
+
+        if (gameStatus === "finished") {
+            setGameStatus("playing");
+            setWinner(null);
+            setEndReason(null);
+            setShowGameEndPopup(false);
+        }
+
+        let undoCount = 1;
+
+        if (gameMode === "human-vs-bot") {
+            undoCount = Math.min(2, moveHistory.length);
+        }
+
+        const nextMoves = moveHistory.slice(
+            0,
+            Math.max(0, moveHistory.length - undoCount)
+        );
+
+        const rebuilt = rebuildGameFromMoves({
+            moves: nextMoves,
+            boardSize,
+        });
+
+        botTurnIdRef.current += 1;
+
+        setBoard(rebuilt.board);
+        setMoveHistory(nextMoves);
+        setBlackCaptured(rebuilt.blackCaptured);
+        setWhiteCaptured(rebuilt.whiteCaptured);
+        setCurrentPlayer(rebuilt.currentPlayer);
+        setLastMovePoint(rebuilt.lastMovePoint);
+        setKoPreviousBoard(rebuilt.koPreviousBoard);
+        setSelectedPoint(null);
+        setFocusedHistoryPoint(null);
+        setConsecutivePasses(rebuilt.consecutivePasses);
+        setErrorMessage(null);
+        setIsBotThinking(false);
+
+        if (nextMoves.length === 0) {
+            if (gameMode === "human-vs-bot" && viewerPlayer === "white") {
+                setCurrentPlayer("black");
+                setMessage(
+                    "Đã Undo về đầu ván. Bấm Reset để để bot Đen đi lại từ đầu."
+                );
+                return;
+            }
+
+            setMessage("Đã Undo về đầu ván.");
+            return;
+        }
+
+        if (gameMode === "human-vs-bot") {
+            setCurrentPlayer(viewerPlayer);
+            setMessage("Đã Undo lượt gần nhất của bạn và bot. Đến lượt bạn.");
+            return;
+        }
+
+        setMessage(`Đã Undo. Đến lượt ${getPlayerLabel(rebuilt.currentPlayer)}.`);
+    }
+
     function handleReset() {
         saveCurrentGameBeforeReset();
         startFreshGame();
@@ -915,66 +995,6 @@ export default function GoBoard({
                 move.player
             )} đi tại hàng ${move.row + 1}, cột ${move.col + 1}.`
         );
-    }
-
-    function handleUndo() {
-        if (isBotThinking) {
-            showError("Bot đang suy nghĩ. Hãy chờ bot đi xong rồi mới Undo.");
-            return;
-        }
-
-        if (moveHistory.length === 0) {
-            showError("Chưa có nước đi nào để Undo.");
-            return;
-        }
-
-        if (gameStatus === "finished") {
-            setGameStatus("playing");
-            setWinner(null);
-            setEndReason(null);
-            setShowGameEndPopup(false);
-        }
-
-        let undoCount = 1;
-
-        if (gameMode === "human-vs-bot") {
-            undoCount = Math.min(2, moveHistory.length);
-        }
-
-        const nextMoves = moveHistory.slice(0, Math.max(0, moveHistory.length - undoCount));
-
-        const rebuilt = rebuildGameFromMoves({
-            moves: nextMoves,
-            boardSize,
-        });
-
-        botTurnIdRef.current += 1;
-
-        setBoard(rebuilt.board);
-        setMoveHistory(nextMoves);
-        setBlackCaptured(rebuilt.blackCaptured);
-        setWhiteCaptured(rebuilt.whiteCaptured);
-        setCurrentPlayer(rebuilt.currentPlayer);
-        setLastMovePoint(rebuilt.lastMovePoint);
-        setKoPreviousBoard(rebuilt.koPreviousBoard);
-        setSelectedPoint(null);
-        setFocusedHistoryPoint(null);
-        setConsecutivePasses(0);
-        setErrorMessage(null);
-        setIsBotThinking(false);
-
-        if (nextMoves.length === 0) {
-            setMessage("Đã Undo về đầu ván.");
-            return;
-        }
-
-        if (gameMode === "human-vs-bot") {
-            setCurrentPlayer(viewerPlayer);
-            setMessage("Đã Undo lượt gần nhất của bạn và bot. Đến lượt bạn.");
-            return;
-        }
-
-        setMessage(`Đã Undo. Đến lượt ${getPlayerLabel(rebuilt.currentPlayer)}.`);
     }
 
     return (
@@ -1027,25 +1047,21 @@ export default function GoBoard({
                         </p>
 
                         {gameMode === "human-vs-bot" && (
-                            <p className="text-neutral-400">
-                                Bạn cầm:{" "}
-                                <span className="font-semibold text-amber-300">
-                                    {getPlayerLabel(viewerPlayer)}
-                                </span>
-                            </p>
-                        )}
+                            <>
+                                <p className="text-neutral-400">
+                                    Bạn cầm:{" "}
+                                    <span className="font-semibold text-amber-300">
+                                        {getPlayerLabel(viewerPlayer)}
+                                    </span>
+                                </p>
 
-                        {gameMode === "human-vs-bot" && (
-                            <p className="text-neutral-400">
-                                Độ khó bot:{" "}
-                                <span className="font-semibold text-emerald-300">
-                                    {botDifficulty === "easy"
-                                        ? "Dễ"
-                                        : botDifficulty === "hard"
-                                            ? "Khó"
-                                            : "Thường"}
-                                </span>
-                            </p>
+                                <p className="text-neutral-400">
+                                    Độ khó bot:{" "}
+                                    <span className="font-semibold text-emerald-300">
+                                        {getBotDifficultyLabel(botDifficulty)}
+                                    </span>
+                                </p>
+                            </>
                         )}
 
                         <p className="text-neutral-400">
@@ -1091,7 +1107,9 @@ export default function GoBoard({
                             <p>
                                 Chế độ:{" "}
                                 <span className="font-semibold text-emerald-300">
-                                    {gameMode === "human-vs-bot" ? "Người vs Bot" : "Người vs Người"}
+                                    {gameMode === "human-vs-bot"
+                                        ? "Người vs Bot"
+                                        : "Người vs Người"}
                                 </span>
                             </p>
 
@@ -1107,11 +1125,7 @@ export default function GoBoard({
                                     <p>
                                         Bot:{" "}
                                         <span className="font-semibold text-emerald-300">
-                                            {botDifficulty === "easy"
-                                                ? "Dễ"
-                                                : botDifficulty === "hard"
-                                                    ? "Khó"
-                                                    : "Thường"}
+                                            {getBotDifficultyLabel(botDifficulty)}
                                         </span>
                                     </p>
                                 </>

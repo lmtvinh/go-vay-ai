@@ -19,6 +19,7 @@ export type FocusSuggestionPayload = {
 
 type MoveSuggestionsProps = {
     moves: Move[];
+    boardSize: number;
     onFocusSuggestion?: (payload: FocusSuggestionPayload) => void;
 };
 
@@ -45,11 +46,15 @@ function getSeverityClassName(severity: "low" | "medium" | "high") {
 
 export default function MoveSuggestions({
     moves,
+    boardSize,
     onFocusSuggestion,
 }: MoveSuggestionsProps) {
     const [playerFilter, setPlayerFilter] = useState<PlayerFilter>("all");
 
-    const allSuggestions = useMemo(() => getBasicMoveSuggestions(moves), [moves]);
+    const allSuggestions = useMemo(
+        () => getBasicMoveSuggestions(moves, boardSize),
+        [moves, boardSize]
+    );
 
     const filteredSuggestions = useMemo(() => {
         if (playerFilter === "all") return allSuggestions;

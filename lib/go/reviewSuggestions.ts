@@ -90,6 +90,10 @@ function scoreMove(
     col: number,
     player: Player
 ): SuggestedMove | null {
+    if (!board[row] || typeof board[row][col] === "undefined") {
+        return null;
+    }
+
     const result = placeStone(board, row, col, player);
 
     if (!result.ok) return null;
@@ -195,8 +199,8 @@ function getSuggestionText({
     };
 }
 
-export function getBasicMoveSuggestions(moves: Move[]) {
-    let board = createEmptyBoard();
+export function getBasicMoveSuggestions(moves: Move[], boardSize = 9) {
+    let board = createEmptyBoard(boardSize);
     const suggestions: MoveSuggestion[] = [];
 
     for (const move of moves) {
