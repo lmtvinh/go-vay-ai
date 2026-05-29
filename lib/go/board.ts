@@ -94,30 +94,33 @@ function removeGroup(board: Board, group: Point[]) {
 }
 
 export function placeStone(
-  board: Board,
-  row: number,
-  col: number,
-  player: Player
-):
-  | {
-      ok: true;
-      board: Board;
-      captured: Point[];
+    board: Board,
+    row: number,
+    col: number,
+    player: Player
+): {
+    ok: boolean;
+    board: Board;
+    captured: Point[];
+    error?: string;
+} {
+    if (!board[row] || typeof board[row][col] === "undefined") {
+        return {
+            ok: false,
+            board,
+            captured: [],
+            error: "Nước đi nằm ngoài bàn cờ.",
+        };
     }
-  | {
-      ok: false;
-      board: Board;
-      captured: Point[];
-      error: string;
-    } {
-  if (board[row][col] !== null) {
-    return {
-      ok: false,
-      board,
-      captured: [],
-      error: "Vị trí này đã có quân.",
-    };
-  }
+
+    if (board[row][col] !== null) {
+        return {
+            ok: false,
+            board,
+            captured: [],
+            error: "Ô này đã có quân cờ.",
+        };
+    }
 
   const nextBoard = cloneBoard(board);
   nextBoard[row][col] = player;
