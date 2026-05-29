@@ -660,7 +660,7 @@ export default function GoBoard({
         const result = placeStone(board, row, col, currentPlayer);
 
         if (!result.ok) {
-            showError(result.error);
+            showError(result.error ?? "Không thể đặt quân ở nước này.");
             return;
         }
 
@@ -953,7 +953,7 @@ export default function GoBoard({
             if (gameMode === "human-vs-bot" && viewerPlayer === "white") {
                 setCurrentPlayer("black");
                 setMessage(
-                    "Đã Undo về đầu ván. Bấm Reset để để bot Đen đi lại từ đầu."
+                    "Đã Undo về đầu ván. Bấm Reset để bot Đen đi lại từ đầu."
                 );
                 return;
             }

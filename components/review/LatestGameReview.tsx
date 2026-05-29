@@ -19,6 +19,8 @@ function getEndReasonLabel(reason: SavedGameReview["endReason"]) {
     if (reason === "resign") return "Đầu hàng";
     if (reason === "double-pass") return "Hai lượt Pass liên tiếp";
     if (reason === "score") return "Tính điểm";
+    if (reason === "capture-all") return "Ăn sạch quân";
+    if (reason === "abandoned") return "Ván bị reset / đổi thiết lập";
     return "Hoàn thành";
 }
 
@@ -178,7 +180,7 @@ export default function LatestGameReview() {
                 </div>
             </section>
 
-            <section className="grid gap-4 md:grid-cols-5">
+            <section className="grid gap-4 md:grid-cols-4">
                 <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
                     <p className="text-sm text-neutral-500">Đen đã bắt</p>
                     <p className="mt-2 text-3xl font-bold text-white">
@@ -353,6 +355,19 @@ export default function LatestGameReview() {
                                 ? `${getPlayerLabel(review.score.winner)} thắng ${review.score.margin
                                 } điểm.`
                                 : "Hai bên hòa điểm."}
+                        </p>
+                    )}
+
+                    {review.endReason === "capture-all" && review.winner && (
+                        <p>
+                            Ván kết thúc vì {getPlayerLabel(review.winner)} đã ăn sạch
+                            quân đối thủ.
+                        </p>
+                    )}
+
+                    {review.endReason === "abandoned" && (
+                        <p>
+                            Ván này được lưu lại trước khi người chơi reset hoặc đổi thiết lập.
                         </p>
                     )}
 

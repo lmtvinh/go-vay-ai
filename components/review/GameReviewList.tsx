@@ -17,18 +17,9 @@ function getEndReasonLabel(reason: SavedGameReview["endReason"]) {
     if (reason === "resign") return "Đầu hàng";
     if (reason === "double-pass") return "Hai lượt Pass";
     if (reason === "score") return "Tính điểm";
+    if (reason === "capture-all") return "Ăn sạch quân";
+    if (reason === "abandoned") return "Đã lưu trước khi reset";
     return "Hoàn thành";
-}
-
-function formatDate(value: string) {
-    try {
-        return new Intl.DateTimeFormat("vi-VN", {
-            dateStyle: "medium",
-            timeStyle: "short",
-        }).format(new Date(value));
-    } catch {
-        return value;
-    }
 }
 
 function getGameModeLabel(review: SavedGameReview) {
@@ -40,6 +31,17 @@ function getBotDifficultyLabel(review: SavedGameReview) {
     if (review.botDifficulty === "easy") return "Dễ";
     if (review.botDifficulty === "hard") return "Khó";
     return "Thường";
+}
+
+function formatDate(value: string) {
+    try {
+        return new Intl.DateTimeFormat("vi-VN", {
+            dateStyle: "medium",
+            timeStyle: "short",
+        }).format(new Date(value));
+    } catch {
+        return value;
+    }
 }
 
 export default function GameReviewList() {
@@ -132,7 +134,8 @@ export default function GameReviewList() {
 
                                 <h2 className="mt-2 text-2xl font-bold text-white">
                                     Bàn {review.boardSize}x{review.boardSize} ·{" "}
-                                    {getGameModeLabel(review)} · {getEndReasonLabel(review.endReason)}
+                                    {getGameModeLabel(review)} ·{" "}
+                                    {getEndReasonLabel(review.endReason)}
                                 </h2>
 
                                 <p className="mt-2 text-sm text-neutral-400">
@@ -143,8 +146,9 @@ export default function GameReviewList() {
 
                                 {review.gameMode === "human-vs-bot" && (
                                     <p className="mt-2 text-sm text-neutral-500">
-                                        Bạn cầm {getPlayerLabel(review.viewerPlayer ?? "black")} · Bot{" "}
-                                        {getBotDifficultyLabel(review)}
+                                        Bạn cầm{" "}
+                                        {getPlayerLabel(review.viewerPlayer ?? "black")} ·
+                                        Bot {getBotDifficultyLabel(review)}
                                     </p>
                                 )}
                             </div>
