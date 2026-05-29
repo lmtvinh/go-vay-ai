@@ -66,6 +66,78 @@ function countStones(board: Board) {
     };
 }
 
+function cloneBoard(board: Board): Board {
+    return board.map((row) => [...row]);
+}
+
+function rebuildGameFromMoves({
+    moves,
+    boardSize,
+}: {
+    moves: Move[];
+    boardSize: number;
+}) {
+    let rebuiltBoard = createEmptyBoard(boardSize);
+    let blackCapturedCount = 0;
+    let whiteCapturedCount = 0;
+    let nextPlayer: Player = "black";
+    let lastStonePoint: Point | null = null;
+    let previousBoardForKo: Board | null = null;
+
+    for (const move of moves) {
+        if (move.type === "stone") {
+            const boardBeforeMove = cloneBoard(rebuiltBoard);
+
+            const result = placeStone(
+                rebuiltBoard,
+                move.row,
+                move.col,
+                move.player
+            );
+
+            if (result.ok) {
+                rebuiltBoard = result.board;
+                previousBoardForKo = boardBeforeMove;
+                lastStonePoint = {
+                    row: move.row,
+                    col: move.col,
+                };
+
+                if (move.player === "black") {
+                    blackCapturedCount += result.captured.length;
+                } else {
+                    whiteCapturedCount += result.captured.length;
+                }
+
+                nextPlayer = getOpponent(move.player);
+            }
+
+            continue;
+        }
+
+        if (move.type === "pass") {
+            nextPlayer = getOpponent(move.player);
+            lastStonePoint = null;
+            previousBoardForKo = null;
+            continue;
+        }
+
+        if (move.type === "resign") {
+            nextPlayer = move.winner;
+            lastStonePoint = null;
+        }
+    }
+
+    return {
+        board: rebuiltBoard,
+        blackCaptured: blackCapturedCount,
+        whiteCaptured: whiteCapturedCount,
+        currentPlayer: nextPlayer,
+        lastMovePoint: lastStonePoint,
+        koPreviousBoard: previousBoardForKo,
+    };
+}
+
 export default function GoBoard({
     initialGameMode = "pvp-local",
     initialViewerPlayer = "black",
@@ -847,6 +919,66 @@ export default function GoBoard({
         );
     }
 
+    function handleUndo() {
+        if (isBotThinking) {
+            showError("Bot đang suy nghĩ. Hãy chờ bot đi xong rồi mới Undo.");
+            return;
+        }
+
+        if (moveHistory.length === 0) {
+            showError("Chưa có nước đi nào để Undo.");
+            return;
+        }
+
+        if (gameStatus === "finished") {
+            setGameStatus("playing");
+            setWinner(null);
+            setEndReason(null);
+            setShowGameEndPopup(false);
+        }
+
+        let undoCount = 1;
+
+        if (gameMode === "human-vs-bot") {
+            undoCount = Math.min(2, moveHistory.length);
+        }
+
+        const nextMoves = moveHistory.slice(0, Math.max(0, moveHistory.length - undoCount));
+
+        const rebuilt = rebuildGameFromMoves({
+            moves: nextMoves,
+            boardSize,
+        });
+
+        botTurnIdRef.current += 1;
+
+        setBoard(rebuilt.board);
+        setMoveHistory(nextMoves);
+        setBlackCaptured(rebuilt.blackCaptured);
+        setWhiteCaptured(rebuilt.whiteCaptured);
+        setCurrentPlayer(rebuilt.currentPlayer);
+        setLastMovePoint(rebuilt.lastMovePoint);
+        setKoPreviousBoard(rebuilt.koPreviousBoard);
+        setSelectedPoint(null);
+        setFocusedHistoryPoint(null);
+        setConsecutivePasses(0);
+        setErrorMessage(null);
+        setIsBotThinking(false);
+
+        if (nextMoves.length === 0) {
+            setMessage("Đã Undo về đầu ván.");
+            return;
+        }
+
+        if (gameMode === "human-vs-bot") {
+            setCurrentPlayer(viewerPlayer);
+            setMessage("Đã Undo lượt gần nhất của bạn và bot. Đến lượt bạn.");
+            return;
+        }
+
+        setMessage(`Đã Undo. Đến lượt ${getPlayerLabel(rebuilt.currentPlayer)}.`);
+    }
+
     return (
         <>
             <ErrorPopup
@@ -1063,13 +1195,26 @@ export default function GoBoard({
                             </button>
                         </div>
 
-                        <button
-                            type="button"
-                            onClick={handleReset}
-                            className="w-full rounded-full border border-white/20 px-5 py-2 text-white transition hover:bg-white/10"
-                        >
-                            Reset
-                        </button>
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                onClick={handleUndo}
+                                className={`rounded-full border border-amber-300/40 px-5 py-2 text-amber-200 transition hover:bg-amber-400/10 ${moveHistory.length === 0 || isBotThinking
+                                    ? "cursor-not-allowed opacity-40"
+                                    : ""
+                                    }`}
+                            >
+                                Undo
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleReset}
+                                className="rounded-full border border-white/20 px-5 py-2 text-white transition hover:bg-white/10"
+                            >
+                                Reset
+                            </button>
+                        </div>
                     </div>
                 </div>
 
