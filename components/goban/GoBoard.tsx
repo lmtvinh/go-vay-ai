@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -34,6 +34,11 @@ const SUPPORTED_BOARD_SIZES = [9, 12, 13, 19] as const;
 
 type BoardSize = (typeof SUPPORTED_BOARD_SIZES)[number];
 
+type GoBoardProps = {
+    initialGameMode?: GameMode;
+    initialViewerPlayer?: Player;
+};
+
 function getPlayerLabel(player: Player) {
     return player === "black" ? "Đen" : "Trắng";
 }
@@ -59,9 +64,17 @@ function countStones(board: Board) {
     };
 }
 
-export default function GoBoard() {
+export default function GoBoard({
+    initialGameMode = "pvp-local",
+    initialViewerPlayer = "black",
+}: GoBoardProps) {
     const router = useRouter();
+
     const botTurnIdRef = useRef(0);
+    const initialBotStartedRef = useRef(false);
+
+    const gameMode = initialGameMode;
+    const viewerPlayer = initialViewerPlayer;
 
     const [boardSize, setBoardSize] = useState<BoardSize>(9);
     const [board, setBoard] = useState<Board>(() => createEmptyBoard(9));
@@ -69,13 +82,15 @@ export default function GoBoard() {
     const [moveHistory, setMoveHistory] = useState<Move[]>([]);
     const [blackCaptured, setBlackCaptured] = useState(0);
     const [whiteCaptured, setWhiteCaptured] = useState(0);
-    const [message, setMessage] = useState<string>("Đen đi trước.");
+    const [message, setMessage] = useState<string>(
+        gameMode === "human-vs-bot" && viewerPlayer === "white"
+            ? "Bạn cầm Trắng. Bot Đen sẽ đi trước."
+            : "Đen đi trước."
+    );
     const [gameStatus, setGameStatus] = useState<GameStatus>("playing");
     const [winner, setWinner] = useState<Player | null>(null);
     const [consecutivePasses, setConsecutivePasses] = useState(0);
 
-    const [gameMode, setGameMode] = useState<GameMode>("pvp-local");
-    const [viewerPlayer, setViewerPlayer] = useState<Player>("black");
     const [isBotThinking, setIsBotThinking] = useState(false);
 
     const [endReason, setEndReason] = useState<GameEndReason | null>(null);
@@ -284,15 +299,7 @@ export default function GoBoard() {
         }, 500);
     }
 
-    function startFreshGame({
-        nextBoardSize = boardSize,
-        nextGameMode = gameMode,
-        nextViewerPlayer = viewerPlayer,
-    }: {
-        nextBoardSize?: BoardSize;
-        nextGameMode?: GameMode;
-        nextViewerPlayer?: Player;
-    } = {}) {
+    function startFreshGame(nextBoardSize: BoardSize = boardSize) {
         botTurnIdRef.current += 1;
 
         const freshBoard = createEmptyBoard(nextBoardSize);
@@ -314,8 +321,8 @@ export default function GoBoard() {
         setKoPreviousBoard(null);
         setIsBotThinking(false);
 
-        if (nextGameMode === "human-vs-bot" && nextViewerPlayer === "white") {
-            setMessage("Bạn cầm Trắng. Bot Đen đang suy nghĩ...");
+        if (gameMode === "human-vs-bot" && viewerPlayer === "white") {
+            setMessage("Bạn cầm Trắng. Bot Đen sẽ đi trước.");
 
             scheduleBotTurn({
                 boardBeforeBotMove: freshBoard,
@@ -332,35 +339,6 @@ export default function GoBoard() {
         }
 
         setMessage("Đen đi trước.");
-    }
-
-    function handleBoardSizeChange(nextBoardSize: BoardSize) {
-        saveCurrentGameBeforeReset();
-        setBoardSize(nextBoardSize);
-
-        startFreshGame({
-            nextBoardSize,
-        });
-    }
-
-    function handleGameModeChange(nextGameMode: GameMode) {
-        saveCurrentGameBeforeReset();
-        setGameMode(nextGameMode);
-
-        startFreshGame({
-            nextGameMode,
-        });
-    }
-
-    function handleViewerPlayerChange(nextViewerPlayer: Player) {
-        if (viewerPlayer === nextViewerPlayer) return;
-
-        saveCurrentGameBeforeReset();
-        setViewerPlayer(nextViewerPlayer);
-
-        startFreshGame({
-            nextViewerPlayer,
-        });
     }
 
     function playBotTurn({
@@ -513,6 +491,39 @@ export default function GoBoard() {
         }
     }
 
+    useEffect(() => {
+        if (initialBotStartedRef.current) return;
+        if (gameMode !== "human-vs-bot") return;
+        if (viewerPlayer !== "white") return;
+        if (moveHistory.length > 0) return;
+
+        initialBotStartedRef.current = true;
+
+        const freshBoard = createEmptyBoard(boardSize);
+
+        setBoard(freshBoard);
+        setCurrentPlayer("black");
+        setMessage("Bạn cầm Trắng. Bot Đen sẽ đi trước.");
+
+        scheduleBotTurn({
+            boardBeforeBotMove: freshBoard,
+            historyBeforeBotMove: [],
+            koPreviousBoardForBot: null,
+            consecutivePassesBeforeBot: 0,
+            blackCapturedBeforeBot: 0,
+            whiteCapturedBeforeBot: 0,
+            botPlayer: "black",
+            humanPlayer: "white",
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    function handleBoardSizeChange(nextBoardSize: BoardSize) {
+        saveCurrentGameBeforeReset();
+        setBoardSize(nextBoardSize);
+        startFreshGame(nextBoardSize);
+    }
+
     function handlePlaceStone(row: number, col: number) {
         if (gameStatus === "finished") {
             showError("Ván cờ đã kết thúc. Hãy bấm Reset để chơi ván mới.");
@@ -641,10 +652,10 @@ export default function GoBoard() {
                 setMessage(
                     `${getPlayerLabel(
                         currentPlayer
-                    )} vừa bắt ${capturedCount} quân. Bot đang suy nghĩ...`
+                    )} vừa bắt ${capturedCount} quân. Bot sẽ phản hồi ngay.`
                 );
             } else {
-                setMessage("Bot đang suy nghĩ...");
+                setMessage("Bạn đã đi. Bot sẽ phản hồi ngay.");
             }
 
             scheduleBotTurn({
@@ -722,7 +733,9 @@ export default function GoBoard() {
         setCurrentPlayer(nextPlayer);
 
         if (gameMode === "human-vs-bot" && nextPlayer !== viewerPlayer) {
-            setMessage(`${getPlayerLabel(currentPlayer)} đã Pass. Bot đang suy nghĩ...`);
+            setMessage(
+                `${getPlayerLabel(currentPlayer)} đã Pass. Bot sẽ phản hồi ngay.`
+            );
 
             scheduleBotTurn({
                 boardBeforeBotMove: board,
@@ -806,7 +819,7 @@ export default function GoBoard() {
 
     function handleExitGameMode() {
         saveCurrentGameBeforeReset();
-        router.push("/");
+        router.push("/play");
     }
 
     function handleReviewGame() {
@@ -893,16 +906,6 @@ export default function GoBoard() {
                             </span>
                         </p>
 
-                        <p
-                            className={`min-h-5 text-sm transition-opacity duration-200 ${isBotThinking
-                                ? "text-amber-300 opacity-100"
-                                : "text-amber-300 opacity-0"
-                                }`}
-                            aria-live="polite"
-                        >
-                            Bot đang suy nghĩ...
-                        </p>
-
                         {winner && (
                             <p className="text-neutral-400">
                                 Người thắng:{" "}
@@ -917,75 +920,11 @@ export default function GoBoard() {
                         </p>
 
                         <div className="mt-2 min-h-10">
-                            <p className="text-sm leading-5 text-emerald-300">{message}</p>
-                        </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
-                            Chế độ chơi
-                        </p>
-
-                        <div className="mt-3 grid gap-2">
-                            <button
-                                type="button"
-                                onClick={() => handleGameModeChange("pvp-local")}
-                                className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${gameMode === "pvp-local"
-                                    ? "border-amber-300 bg-amber-400 text-black"
-                                    : "border-white/20 text-white hover:bg-white/10"
-                                    }`}
-                            >
-                                Người vs Người
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => handleGameModeChange("human-vs-bot")}
-                                className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${gameMode === "human-vs-bot"
-                                    ? "border-emerald-300 bg-emerald-400 text-black"
-                                    : "border-white/20 text-white hover:bg-white/10"
-                                    }`}
-                            >
-                                Người vs Bot
-                            </button>
-                        </div>
-                    </div>
-
-                    {gameMode === "human-vs-bot" && (
-                        <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
-                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
-                                Quân của bạn
-                            </p>
-
-                            <div className="mt-3 grid grid-cols-2 gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => handleViewerPlayerChange("black")}
-                                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${viewerPlayer === "black"
-                                        ? "border-amber-300 bg-amber-400 text-black"
-                                        : "border-white/20 text-white hover:bg-white/10"
-                                        }`}
-                                >
-                                    Đen
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={() => handleViewerPlayerChange("white")}
-                                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${viewerPlayer === "white"
-                                        ? "border-amber-300 bg-amber-400 text-black"
-                                        : "border-white/20 text-white hover:bg-white/10"
-                                        }`}
-                                >
-                                    Trắng
-                                </button>
-                            </div>
-
-                            <p className="mt-3 text-xs leading-5 text-neutral-500">
-                                Nếu bạn chọn Trắng, bot cầm Đen và sẽ đi trước.
+                            <p className="text-sm leading-5 text-emerald-300">
+                                {message}
                             </p>
                         </div>
-                    )}
+                    </div>
 
                     <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
                         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
@@ -1007,6 +946,17 @@ export default function GoBoard() {
                                 </button>
                             ))}
                         </div>
+
+                        <button
+                            type="button"
+                            onClick={() => {
+                                saveCurrentGameBeforeReset();
+                                router.push("/play");
+                            }}
+                            className="mt-3 w-full rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+                        >
+                            Đổi chế độ
+                        </button>
                     </div>
 
                     <div className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm">
@@ -1104,17 +1054,25 @@ export default function GoBoard() {
                     </div>
                 </div>
 
-                <BoardGrid
-                    board={board}
-                    onPointClick={handlePlaceStone}
-                    highlightedGroupKeys={highlightedGroupKeys}
-                    highlightedLibertyKeys={highlightedLibertyKeys}
-                    isDisabled={gameStatus === "finished"}
-                    ariaLabelPrefix="Place stone at"
-                    previewPlayer={previewPlayer}
-                    lastMovePoint={lastMovePoint}
-                    focusedPoint={focusedHistoryPoint}
-                />
+                <div className="relative">
+                    <BoardGrid
+                        board={board}
+                        onPointClick={handlePlaceStone}
+                        highlightedGroupKeys={highlightedGroupKeys}
+                        highlightedLibertyKeys={highlightedLibertyKeys}
+                        isDisabled={gameStatus === "finished"}
+                        ariaLabelPrefix="Place stone at"
+                        previewPlayer={previewPlayer}
+                        lastMovePoint={lastMovePoint}
+                        focusedPoint={focusedHistoryPoint}
+                    />
+
+                    {isBotThinking && (
+                        <div className="pointer-events-none absolute left-1/2 top-4 z-40 -translate-x-1/2 rounded-full border border-amber-300/30 bg-black/70 px-4 py-2 text-sm font-semibold text-amber-200 shadow-2xl backdrop-blur">
+                            Bot đang suy nghĩ...
+                        </div>
+                    )}
+                </div>
 
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                     <h3 className="mb-3 font-semibold text-white">
@@ -1140,7 +1098,8 @@ export default function GoBoard() {
                                     {move.type === "stone" && (
                                         <>
                                             <span>
-                                                #{move.moveNumber} {getPlayerLabel(move.player)} đi tại hàng{" "}
+                                                #{move.moveNumber}{" "}
+                                                {getPlayerLabel(move.player)} đi tại hàng{" "}
                                                 {move.row + 1}, cột {move.col + 1}
                                             </span>
 
@@ -1154,13 +1113,15 @@ export default function GoBoard() {
 
                                     {move.type === "pass" && (
                                         <span>
-                                            #{move.moveNumber} {getPlayerLabel(move.player)} Pass
+                                            #{move.moveNumber}{" "}
+                                            {getPlayerLabel(move.player)} Pass
                                         </span>
                                     )}
 
                                     {move.type === "resign" && (
                                         <span>
-                                            #{move.moveNumber} {getPlayerLabel(move.player)} đầu hàng.{" "}
+                                            #{move.moveNumber}{" "}
+                                            {getPlayerLabel(move.player)} đầu hàng.{" "}
                                             {getPlayerLabel(move.winner)} thắng.
                                         </span>
                                     )}
