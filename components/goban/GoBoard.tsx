@@ -17,6 +17,7 @@ import type { BasicScoreResult } from "@/lib/go/scoring";
 
 import type {
     Board,
+    BotDifficulty,
     GameEndReason,
     GameMode,
     GameStatus,
@@ -37,6 +38,7 @@ type BoardSize = (typeof SUPPORTED_BOARD_SIZES)[number];
 type GoBoardProps = {
     initialGameMode?: GameMode;
     initialViewerPlayer?: Player;
+    initialBotDifficulty?: BotDifficulty;
 };
 
 function getPlayerLabel(player: Player) {
@@ -67,6 +69,7 @@ function countStones(board: Board) {
 export default function GoBoard({
     initialGameMode = "pvp-local",
     initialViewerPlayer = "black",
+    initialBotDifficulty = "normal",
 }: GoBoardProps) {
     const router = useRouter();
 
@@ -119,6 +122,8 @@ export default function GoBoard({
             (gameMode === "human-vs-bot" && currentPlayer !== viewerPlayer)
             ? null
             : currentPlayer;
+
+    const botDifficulty = initialBotDifficulty;
 
     function showError(error: string) {
         setErrorMessage(error);
@@ -364,6 +369,7 @@ export default function GoBoard({
             board: boardBeforeBotMove,
             player: botPlayer,
             koPreviousBoard: koPreviousBoardForBot,
+            difficulty: botDifficulty,
         });
 
         if (!botPoint) {
@@ -895,6 +901,19 @@ export default function GoBoard({
                                 Bạn cầm:{" "}
                                 <span className="font-semibold text-amber-300">
                                     {getPlayerLabel(viewerPlayer)}
+                                </span>
+                            </p>
+                        )}
+
+                        {gameMode === "human-vs-bot" && (
+                            <p className="text-neutral-400">
+                                Độ khó bot:{" "}
+                                <span className="font-semibold text-emerald-300">
+                                    {botDifficulty === "easy"
+                                        ? "Dễ"
+                                        : botDifficulty === "hard"
+                                            ? "Khó"
+                                            : "Thường"}
                                 </span>
                             </p>
                         )}
